@@ -1,0 +1,21 @@
+{
+  "name": "jsconf.asia-workshop",
+  "version": "0.0.1",
+  "authors": [
+    "Tamas Piros"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "app/bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angularjs": "~1.2.22",
+    "angular-route": "~1.2.22",
+    "bootstrap": "~3.2.0"
+  }
+}

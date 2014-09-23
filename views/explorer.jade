@@ -1,0 +1,28 @@
+extends layout
+
+block content
+    .container
+        h1 Explore the API
+        div.panel.panel-primary
+          div.panel-heading
+            h3.panel-title
+                code /api/
+          div.panel-body
+            p Returns all image information
+            pre. [{"_id":"53f5d1888c920ee00e0057a8","filename":"IMG_1213.JPG","location":{"type":"Point","coordinates":[0.13,51.510833]}},
+                {"_id":"53f5d1888c920ee00e0057c7","filename":"IMG_1325.JPG","location":{"type":"Point","coordinates":[0.757,52.008333]}},
+                {"_id":"53f5d1888c920ee00e005799","filename":"IMG_1169.JPG","location":{"type":"Point","coordinates":[0.749333,52.042]}}]
+        div.panel.panel-primary
+          div.panel-heading
+            h3.panel-title
+                code /api/image/:id
+          div.panel-body
+            p Returns information of one image
+            pre {"filename":"IMG_1213.JPG","location":{"type":"Point","coordinates":[0.13,51.510833]},"binary":"/9j/4Sd4RXhpZgAATU0AKgAAAAgACwEPAAIAAAAGAAAAkgEQAAIAAAAJAAAAmAESAAMAAAABAAYAAAEaAAUAAAABAAAAogEbAAUAAAABAAAAqgEoAAMAAAABAAIAAAExAAIAAAAENC4xAAEyAAIAAAAUAAAAsgITAAMAAAABAA[...]"}
+        div.panel.panel-primary
+          div.panel-heading
+            h3.panel-title
+                code /api/imagedata/:id
+          div.panel-body
+            p Returns binary information only
+            pre {"binary":"/9j/4Sd4RXhpZgAATU0AKgAAAAgACwEPAAIAAAAGAAAAkgEQAAIAAAAJAAAAmAESAAMAAAABAAYAAAEaAAUAAAABAAAAogEbAAUAAAABAAAAqgEoAAMAAAABAAIAAAExAAIAAAAENC4xAAEyAAIAAAAUAAAAsgITAAMAAAABAA[...]"}
