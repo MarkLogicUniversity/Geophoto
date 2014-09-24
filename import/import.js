@@ -179,7 +179,7 @@ db.write(
                                 filename: filenameInDatabase,
                                 location: {
                                     type: 'Point',
-                                    coordinates: [extractedLocation.longitude, extractedLocation.latitude]
+                                    coordinates: [extractedLocation.latitude, extractedLocation.longitude]
                                 },
                                 binary: binary
                             });

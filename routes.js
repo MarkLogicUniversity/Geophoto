@@ -7,58 +7,56 @@ var marklogic =require('./node-client-api/lib/marklogic.js'),
     q = marklogic.queryBuilder;
 
 var selectAll = function selectAll(callback) {
+    var docs = [];
     db.query(q.where('').slice(1,300)).result(function(documents) {
-        callback(documents);
+        documents.forEach(function (document) {
+            docs.push(document.content);
+        });
+        callback(docs);
     });
 };
 
 var selectOne = function selectOne(uri, callback) {
+    var oneDocument = [];
     db.read('/' + uri).result().then(function (doc) {
-        //console.log(doc);
-        callback(doc.content);
+        doc.forEach(function (d) {
+            oneDocument.push(d.content);
+        });
+        callback(oneDocument);
     })
 };
 
 var selectImageData = function selectImageData(uri, callback) {
+    var imageData = [];
     db.read('/' + uri + '.json').result().then(function (data) {
-        //console.log(data);
-        //console.log(data);
-        callback(data);
+        data.forEach(function (d) {
+            imageData.push(d.content);
+        });
+        callback(imageData);
     });
 };
 
 
 var apiindex = function(req, res) {
     var docs = [];
-    selectAll(function(documents){
-        documents.forEach(function (document) {
-            docs.push(document.content);
-            
-        });
-        res.json(docs);
+    selectAll(function(documents) {
+        res.json(documents);
     });
 };
 
 var apiimage = function(req, res) {
     var id = req.params.id;
     var doc = [];
-    selectOne(id, function (document) {
-        document.forEach(function (d) {
-            doc.push(d.content);
-        })
-        res.json(doc);
+    selectOne(id, function (oneDocument) {
+        res.json(oneDocument);
     });
 };
 
 var apiimagedata = function(req, res) {
     var id = req.params.id;
     var doc = [];
-    selectImageData(id, function (document) {
-        document.forEach(function (d) {
-            doc.push(d.content);
-            
-        });
-        res.json(doc);
+    selectImageData(id, function (imageData) {
+        res.json(imageData);
     });
     // selectImageData(id, function(doc) {
     //     console.log(doc);

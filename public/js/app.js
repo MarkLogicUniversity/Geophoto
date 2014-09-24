@@ -34,8 +34,8 @@ app.controller('MapController', ['$scope', 'PhotoService',
         
         // function to create marker on the map
         var createMarker = function(data, max) {
-            var latitude = data.location.coordinates[1],
-                longitude = data.location.coordinates[0];
+            var latitude = data.location.coordinates[0],
+                longitude = data.location.coordinates[1];
 
             var marker = new google.maps.Marker({
                 map: $scope.map,
