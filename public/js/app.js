@@ -37,22 +37,29 @@ app.controller('MapController', ['$scope', 'PhotoService',
             var latitude = data.location.coordinates[0],
                 longitude = data.location.coordinates[1];
 
-            var marker = new google.maps.Marker({
+            var marker = {
                 map: $scope.map,
                 position: new google.maps.LatLng(latitude, longitude),
                 title: data.filename,
                 id: data.filename,
-            });
+            };
             
             PhotoService.showImage(marker.id).success(function(d) {
                 marker['binary'] = d[0];
                 marker['content'] = '<div class="infoWindowContent"><img width="300" src="data:image/jpg;base64,' + marker.binary + '"></div>';
 
+               // place marker
+                
+                marker = new google.maps.Marker(marker);    
+
                 google.maps.event.addListener(marker, 'click', function(){
                     infoWindow.setContent('<h2>' + marker.title + '</h2>' + marker.content);
                     infoWindow.open($scope.map, marker);
                 });
+
+
                 numberOfCalls++;
+                
                 if (numberOfCalls === max) {
                     $scope.markers = tmpMarkers;
                     $scope.markers.message = '';
