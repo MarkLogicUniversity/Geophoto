@@ -45,7 +45,7 @@ app.controller('MapController', ['$scope', 'PhotoService',
             });
             
             PhotoService.showImage(marker.id).success(function(d) {
-                marker['binary'] = d[0].binary;
+                marker['binary'] = d[0];
                 marker['content'] = '<div class="infoWindowContent"><img width="300" src="data:image/jpg;base64,' + marker.binary + '"></div>';
 
                 google.maps.event.addListener(marker, 'click', function(){

@@ -58,23 +58,49 @@ db.write(
 
 
     // function to insert data into the database
-    var insertData = function insertData(data) {
-        //console.log(data);
+    var insertData = function insertData(data, path) {
+        console.log(path);
+        if(path.toLowerCase().substr(-4) === '.jpg' || path.toLowerCase().substr(-5) === '.jpeg') {
+            var file = path;
+        } else {
+            var file = path + '/' + data.filename;
+        }
+
+    
         db.write({
-            uri: '/' + data.filename + '.json',
+            uri: '/image/' + data.filename + '.json',
             contentType: 'application/json',
+            collections: ['image'],
             content: data
+        }).result(function (response) {
+            console.log('Successfully inserted ', response.documents[0].uri);
         });
-        //db.write(data);
-        // db.write(data.map(function (item) {
-        //     return {
-        //         contentType: 'application/json',
-        //         content: item
-        //     }
-        // })
-        // ).result( function (response) {
-        //     console.log('Successfully inserted ' + JSON.stringify(response));
+
+        console.log(data);
+        console.log(file);
+
+        db.write({
+            uri: '/binary/' + data.filename,
+            contentType: 'image/jpeg',
+            collections: ['binary'],
+            content: fs.readFileSync(file)
+        }).result(function (response) {
+            console.log('Successfully inserted ', response.documents[0].uri);
+        });
+        
+
+        // var ws = db.documents.createWriteStream({
+        //     uri: '/binary/' + data.filename,
+        //     contentType: 'image/jpeg'
         // });
+
+        // ws.result(function (response) {
+        //     console.log('Successfully inserted', response)
+        // });
+
+        // fs.createReadStream(file).pipe(ws);
+        
+        
     }
 
     // function to convert degrees, minutes and seconds to decimal values
@@ -157,7 +183,7 @@ db.write(
 
                 // convert the content of the image file to binary
                 // this is later used in HTML as <img src="data:image/jpg;base64,[binary]>
-                var binary = new Buffer(fs.readFileSync(file), 'binary').toString('base64');
+                // var binary = new Buffer(fs.readFileSync(file), 'binary').toString('base64');
 
                 new ExifImage({ image: file}, function(error, exifData) {
                     if (error) {
@@ -181,7 +207,7 @@ db.write(
                                     type: 'Point',
                                     coordinates: [extractedLocation.latitude, extractedLocation.longitude]
                                 },
-                                binary: binary
+                                binary: '/binary/' + filenameInDatabase
                             });
                             console.log('Successfully extracted GPS information from ' + file);
                         }
@@ -191,10 +217,9 @@ db.write(
         }
         // handle single files as well
         else if (loc.toLowerCase().substr(-4) === '.jpg' || loc.toLowerCase().substr(-5) === '.jpeg') {
-
             // convert the content of the image file to binary
             // this is later used in HTML as <img src="data:image/jpg;base64,[binary]>
-            var binary = new Buffer(fs.readFileSync(loc), 'binary').toString('base64');
+            // var binary = new Buffer(fs.readFileSync(loc), 'binary').toString('base64');
 
             new ExifImage({ image: loc}, function(error, exifData) {
                 if (error) {
@@ -210,14 +235,14 @@ db.write(
                         location.longitude = gpsData.GPSLongitude;
                         location.longitudeReference = gpsData.GPSLongitudeRef;
                         var extractedLocation = extractAndConvertGPSData(location);
-                        var filenameInDatabase = loc;
+                        var filenameInDatabase = loc.split('/').pop();;
                         callback({
                             filename: filenameInDatabase,
                             location: {
                                 type: 'Point',
                                 coordinates: [extractedLocation.longitude, extractedLocation.latitude]
                             },
-                            binary: binary
+                            binary: '/binary/' + filenameInDatabase
                         });
                         console.log('Successfully extracted GPS information from ' + loc);
                     }
@@ -242,7 +267,6 @@ db.write(
             // check whether the path is a directory
             if (fs.statSync(arg).isDirectory()) {
                 fs.readdirSync(arg).filter(function(file) {
-
                     // only process files with jpg extension
                     if (file.toLowerCase().substr(-4) === '.jpg' || file.toLowerCase().substr(-5) === '.jpeg') {
                         files.push(arg + '/' + file);
@@ -253,7 +277,7 @@ db.write(
                 getGPSInfo(files, function(data) {
 
                     // insert data to database
-                    insertData(data);
+                    insertData(data, arg);
                 });
             }
 
@@ -262,9 +286,8 @@ db.write(
 
                 // extract GPS data out of one file
                 getGPSInfo(arg, function(data) {
-
                     // insert data to database
-                    insertData(data);
+                    insertData(data, arg);
                 });
             }
         }

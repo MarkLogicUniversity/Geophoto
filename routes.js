@@ -8,7 +8,7 @@ var marklogic =require('./node-client-api/lib/marklogic.js'),
 
 var selectAll = function selectAll(callback) {
     var docs = [];
-    db.query(q.where('').slice(1,300)).result(function(documents) {
+    db.query(q.where(q.collection('image')).slice(0,300)).result(function(documents) {
         documents.forEach(function (document) {
             docs.push(document.content);
         });
@@ -18,7 +18,7 @@ var selectAll = function selectAll(callback) {
 
 var selectOne = function selectOne(uri, callback) {
     var oneDocument = [];
-    db.read('/' + uri).result().then(function (doc) {
+    db.read('/image/' + uri).result().then(function (doc) {
         doc.forEach(function (d) {
             oneDocument.push(d.content);
         });
@@ -28,9 +28,9 @@ var selectOne = function selectOne(uri, callback) {
 
 var selectImageData = function selectImageData(uri, callback) {
     var imageData = [];
-    db.read('/' + uri + '.json').result().then(function (data) {
+    db.read('/binary/' + uri).result().then(function (data) {
         data.forEach(function (d) {
-            imageData.push(d.content);
+            imageData.push(new Buffer(d.content, 'binary').toString('base64'));
         });
         callback(imageData);
     });
