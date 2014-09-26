@@ -18,7 +18,8 @@ var selectAll = function selectAll(callback) {
 
 var selectOne = function selectOne(uri, callback) {
     var oneDocument = [];
-    db.read('/image/' + uri).result().then(function (doc) {
+    db.read('/image/' + uri + '.json').result().then(function (doc) {
+        console.log(doc);
         doc.forEach(function (d) {
             oneDocument.push(d.content);
         });

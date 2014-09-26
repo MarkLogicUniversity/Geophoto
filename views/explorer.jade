@@ -8,21 +8,24 @@ block content
             h3.panel-title
                 code /api/
           div.panel-body
-            p Returns all image information
-            pre. [{"_id":"53f5d1888c920ee00e0057a8","filename":"IMG_1213.JPG","location":{"type":"Point","coordinates":[0.13,51.510833]}},
-                {"_id":"53f5d1888c920ee00e0057c7","filename":"IMG_1325.JPG","location":{"type":"Point","coordinates":[0.757,52.008333]}},
-                {"_id":"53f5d1888c920ee00e005799","filename":"IMG_1169.JPG","location":{"type":"Point","coordinates":[0.749333,52.042]}}]
+            p Returns information about all the images in the database #[b except] their binary data. The binary data is linked using the #[i binary] property
+            pre.
+              [
+                {"filename":"IMG_1.JPG","location":{"type":"Point","coordinates":[lat,lon]},"binary":"/binary/IMG_1.JPG"},
+                {"filename":"IMG_2.JPG","location":{"type":"Point","coordinates":[lat,lon]},"binary":"/binary/IMG_2.JPG"},
+                {"filename":"IMG_n.JPG","location":{"type":"Point","coordinates":[lat,lon]},"binary":"/binary/IMG_n.JPG"}
+              ]
         div.panel.panel-primary
           div.panel-heading
             h3.panel-title
                 code /api/image/:id
           div.panel-body
-            p Returns information of one image
-            pre {"filename":"IMG_1213.JPG","location":{"type":"Point","coordinates":[0.13,51.510833]},"binary":"/9j/4Sd4RXhpZgAATU0AKgAAAAgACwEPAAIAAAAGAAAAkgEQAAIAAAAJAAAAmAESAAMAAAABAAYAAAEaAAUAAAABAAAAogEbAAUAAAABAAAAqgEoAAMAAAABAAIAAAExAAIAAAAENC4xAAEyAAIAAAAUAAAAsgITAAMAAAABAA[...]"}
+            p Returns information for one image
+            pre [{"filename":"IMG_1.JPG","location":{"type":"Point","coordinates":[lat, lon]},"binary":"/binary/IMG_1.JPG"}]
         div.panel.panel-primary
           div.panel-heading
             h3.panel-title
                 code /api/imagedata/:id
           div.panel-body
-            p Returns binary information only
-            pre {"binary":"/9j/4Sd4RXhpZgAATU0AKgAAAAgACwEPAAIAAAAGAAAAkgEQAAIAAAAJAAAAmAESAAMAAAABAAYAAAEaAAUAAAABAAAAogEbAAUAAAABAAAAqgEoAAMAAAABAAIAAAExAAIAAAAENC4xAAEyAAIAAAAUAAAAsgITAAMAAAABAA[...]"}
+            p Returns the image content in a binary format - this is used to rebuild the image using #[code &lt;img src='data:image/jpg;base64,[binary]'&gt;]
+            pre ["/9j/4S/+RXhpZgAATU0AKgAAAAgACwEPAAIAAAAGAAAAkgEQAAIAAAAJAAAAmAESAAMAAAABAAEAAAEa(...)]
