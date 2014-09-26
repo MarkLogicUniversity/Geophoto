@@ -40,33 +40,14 @@ var fs = require('fs'),
     db = marklogic.createDatabaseClient(connection),
     q = marklogic.queryBuilder;
 
-/**
-db.write(
-  data.map(function(item) {
-    return {
-      uri: "/" + item.guid + ".json",
-      contentType: "application/json",
-      collections: ["fake data"],
-      content: item
-    }
-  })
-).
-  result(function(response){
-    console.dir(JSON.stringify(response))
-  })
-*/
-
-
     // function to insert data into the database
     var insertData = function insertData(data, path) {
-        console.log(path);
         if(path.toLowerCase().substr(-4) === '.jpg' || path.toLowerCase().substr(-5) === '.jpeg') {
             var file = path;
         } else {
             var file = path + '/' + data.filename;
         }
 
-    
         db.write({
             uri: '/image/' + data.filename + '.json',
             contentType: 'application/json',
@@ -75,9 +56,6 @@ db.write(
         }).result(function (response) {
             console.log('Successfully inserted ', response.documents[0].uri);
         });
-
-        console.log(data);
-        console.log(file);
 
         db.write({
             uri: '/binary/' + data.filename,
@@ -88,7 +66,6 @@ db.write(
             console.log('Successfully inserted ', response.documents[0].uri);
         });
         
-
         // var ws = db.documents.createWriteStream({
         //     uri: '/binary/' + data.filename,
         //     contentType: 'image/jpeg'
@@ -106,9 +83,9 @@ db.write(
     // function to convert degrees, minutes and seconds to decimal values
     var convertDegreesToDecimal = function convertDegreesToDecimal(degree, minute, second, sign) {
         var absoluteDegree,
-                absoluteMinute,
-                absoluteSecond,
-                decimal;
+            absoluteMinute,
+            absoluteSecond,
+            decimal;
 
         // make sure that all arguments are provided
         if (degree && minute && second && sign) {
@@ -170,10 +147,6 @@ db.write(
      *  longitudeReference = W
      * }
      *
-     * finally it also opens up the and creates a new Buffer
-     * this binary data gets added to the database now but
-     * it's only returned as part of a separate API call
-     * in order to maintain a good performance
      */
     var getGPSInfo = function getGPSInfo(loc, callback) {
         
@@ -184,7 +157,6 @@ db.write(
                 // convert the content of the image file to binary
                 // this is later used in HTML as <img src="data:image/jpg;base64,[binary]>
                 // var binary = new Buffer(fs.readFileSync(file), 'binary').toString('base64');
-
                 new ExifImage({ image: file}, function(error, exifData) {
                     if (error) {
                         console.log('Error with ExifImage library: ' + error);
@@ -215,7 +187,7 @@ db.write(
                 });
             });
         }
-        // handle single files as well
+        // handle single files as well that have jpg and jpeg extensions
         else if (loc.toLowerCase().substr(-4) === '.jpg' || loc.toLowerCase().substr(-5) === '.jpeg') {
             // convert the content of the image file to binary
             // this is later used in HTML as <img src="data:image/jpg;base64,[binary]>
@@ -240,7 +212,7 @@ db.write(
                             filename: filenameInDatabase,
                             location: {
                                 type: 'Point',
-                                coordinates: [extractedLocation.longitude, extractedLocation.latitude]
+                                coordinates: [extractedLocation.latitude, extractedLocation.longitude]
                             },
                             binary: '/binary/' + filenameInDatabase
                         });
