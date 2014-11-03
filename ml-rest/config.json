@@ -1,0 +1,10 @@
+{
+    "rest-api":
+    {
+        "name": "mlu-jsconf-asia",
+        "group": "Default",
+        "database": "mlu-jsconf-asia-content",
+        "modules-database": "mlu-jsconf-asia-modules",
+        "port": "5003"
+    }
+}
