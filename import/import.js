@@ -36,7 +36,7 @@
 var fs = require('fs'),
     ExifImage = require('exif').ExifImage,
     marklogic =require('./../node-client-api/lib/marklogic.js'),
-    connection = require('./dbsettings').connection,
+    connection = require('./../dbsettings').connection,
     db = marklogic.createDatabaseClient(connection),
     q = marklogic.queryBuilder;
 

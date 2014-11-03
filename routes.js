@@ -4,7 +4,8 @@
 var marklogic =require('./node-client-api/lib/marklogic.js'),
     connection = require('./dbsettings').connection,
     db = marklogic.createDatabaseClient(connection),
-    q = marklogic.queryBuilder;
+    q = marklogic.queryBuilder,
+    p = marklogic.patchBuilder;
 
 var selectAll = function selectAll(callback) {
     var docs = [];
@@ -19,7 +20,6 @@ var selectAll = function selectAll(callback) {
 var selectOne = function selectOne(uri, callback) {
     var oneDocument = [];
     db.read('/image/' + uri + '.json').result().then(function (doc) {
-        console.log(doc);
         doc.forEach(function (d) {
             oneDocument.push(d.content);
         });
@@ -37,6 +37,29 @@ var selectImageData = function selectImageData(uri, callback) {
     });
 };
 
+var patchDocument = function(uri, update, callback) {
+    db.read('/image/' + uri + '.json').result().
+    then(function(document) {
+        if (document[0].content.title) {
+            db.patch('/image/' + uri + '.json',
+                p.pathLanguage('jsonpath'),
+                p.replace('$.title', update)
+            ).result().
+            then(function(response) {
+                callback(console.log('updated', response));
+            });        
+        } else {
+            db.patch('/image/' + uri + '.json',
+                p.pathLanguage('jsonpath'),
+                p.replaceInsert('$.title', '$.filename', 'after', {title: update})
+            ).result().
+            then(function(response) {
+                callback(console.log('updated', response));
+            });
+        }
+    });
+    
+};
 
 var apiindex = function(req, res) {
     var docs = [];
@@ -65,32 +88,33 @@ var apiimagedata = function(req, res) {
     // })
 };
 
+var apiadd = function(req, res) {
+    var id = req.params.id;
+    var update = req.params.update;
+    patchDocument(id, update, function (data) {
+        res.json(200);
+    });
+
+}
+
 var appindex = function(req, res) {
-    res.render('index', {page: 'index'});
+    res.render('index');
 };
 
-var appimportfiles = function(req, res) {
-    res.render('importfiles', {page: 'importfiles'});
-};
-
-var appmap = function(req, res) {
-    res.render('map', {page: 'map'});
-};
-
-var appexplorer = function(req, res) {
-    res.render('explorer', {page: 'explorer'});
+var partials = function partials(req, res) {
+    var name = req.params.name;
+    res.render('partials/' + name);
 };
 
 module.exports = {
     app: {
         index: appindex,
-        importfiles: appimportfiles,
-        map: appmap,
-        explorer: appexplorer
+        partials: partials
     },
     api : {
         index: apiindex,
         image: apiimage,
-        imagedata: apiimagedata
+        imagedata: apiimagedata,
+        add: apiadd
     }
 };

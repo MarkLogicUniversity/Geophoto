@@ -10,10 +10,8 @@ var paths = {
 };
 
 var outputs = {
-    css: 'public/css/'
+    css: 'public/css/dist/'
 };
-
-console.log(outputs.css);
 
 gulp.task('css', function() {
     return gulp.src(paths.css)
@@ -25,8 +23,3 @@ gulp.task('css', function() {
 });
 
 gulp.task('default', ['css']);
-
-function errorHandler (error) {
-  console.log(error.toString());
-  this.emit('end');
-}

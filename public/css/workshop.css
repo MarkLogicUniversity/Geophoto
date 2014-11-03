@@ -1,4 +1,9 @@
 /*standard styling*/
+[ng\:cloak],
+[ng-cloak],
+.ng-cloak {
+  display:none !important
+}
 html {
   position: relative;
   min-height: 100%;
@@ -15,10 +20,18 @@ body {
     height:450px;
     margin-bottom: 10px;
 }
+.infoWindowHeader {
+  display: block;
+  font-size: 14px;
+  padding-bottom:10px;
+}
 .infoWindowContent {
-    font-size:  14px !important;
     border-top: 1px solid #ccc;
     padding-top: 10px;
+    display: block;
+}
+.infoWindowContent img {
+  width: 300px;
 }
 #footer {
   position: absolute;

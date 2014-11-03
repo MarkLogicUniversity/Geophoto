@@ -1,0 +1,28 @@
+.container
+    h1 Explore the API
+    div.panel.panel-primary
+      div.panel-heading
+        h3.panel-title
+            code /api/
+      div.panel-body
+        p Returns information about all the images in the database #[b except] their binary data. The binary data is linked using the #[i binary] property
+        pre.
+          [
+            {"filename":"IMG_1.JPG","location":{"type":"Point","coordinates":[lat,lon]},"binary":"/binary/IMG_1.JPG"},
+            {"filename":"IMG_2.JPG","location":{"type":"Point","coordinates":[lat,lon]},"binary":"/binary/IMG_2.JPG"},
+            {"filename":"IMG_n.JPG","location":{"type":"Point","coordinates":[lat,lon]},"binary":"/binary/IMG_n.JPG"}
+          ]
+    div.panel.panel-primary
+      div.panel-heading
+        h3.panel-title
+            code /api/image/:id
+      div.panel-body
+        p Returns information for one image
+        pre [{"filename":"IMG_1.JPG","location":{"type":"Point","coordinates":[lat, lon]},"binary":"/binary/IMG_1.JPG"}]
+    div.panel.panel-primary
+      div.panel-heading
+        h3.panel-title
+            code /api/imagedata/:id
+      div.panel-body
+        p Returns the image content in a binary format - this is used to rebuild the image using #[code &lt;img src='data:image/jpg;base64,[binary]'&gt;]
+        pre ["/9j/4S/+RXhpZgAATU0AKgAAAAgACwEPAAIAAAAGAAAAkgEQAAIAAAAJAAAAmAESAAMAAAABAAEAAAEa(...)]

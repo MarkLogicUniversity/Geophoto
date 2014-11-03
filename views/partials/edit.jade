@@ -1,0 +1,8 @@
+.container
+  h1 Photo edit
+  h3 {{ image.title }}
+  p Da new title yo: 
+    input(type='text', ng-model='image.newtitle')
+    button(ng-click='update()') update
+  p
+    img(ng-src='{{ image.binaryData }}', width='200px')
