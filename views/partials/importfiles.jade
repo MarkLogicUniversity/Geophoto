@@ -6,18 +6,18 @@
   p.
     The import tool has two options - it can process one single file as well as multiple jp(e)g images from a specified folder (the script cannot iterate through sub-directories at the moment)
   pre.
-    node app.js [filename.jpg]
+    node import.js [filename.jpg]
   p or
   pre.
-    node app.js [/path/to/folder]
+    node import.js [/path/to/folder]
   p.
-    <code>dbsettings.js</code> contains the settings to connect to the database - the default settings are:
+    <code>dbsettings.js</code> contains the settings to connect to the database and it's located in the project's root folder - the default settings are:
   pre.
     'use strict';
 
     var connection = {
         host: 'localhost',
-        port: 8091,
+        port: 5003,
         user: 'admin',
         password: 'admin'
     };

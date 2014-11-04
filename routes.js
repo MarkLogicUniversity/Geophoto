@@ -38,16 +38,15 @@ var selectImageData = function selectImageData(uri, callback) {
 };
 
 var patchDocument = function(uri, update, callback) {
-    console.log('update', update);
     db.documents.read('/image/' + uri + '.json').result().
     then(function(document) {
         if (document[0].content.title) {
-            db.documentspatch('/image/' + uri + '.json',
+            db.documents.patch('/image/' + uri + '.json',
                 p.pathLanguage('jsonpath'),
                 p.replace('$.title', update)
             ).result().
             then(function(response) {
-                callback(console.log('updated', response));
+                callback(response);
             });        
         } else {
             db.documents.patch('/image/' + uri + '.json',
@@ -55,7 +54,7 @@ var patchDocument = function(uri, update, callback) {
                 p.replaceInsert('$.title', '$.filename', 'after', {title: update})
             ).result().
             then(function(response) {
-                callback(console.log('updated', response));
+                callback(response);
             });
         }
     });
@@ -76,7 +75,6 @@ var apiimage = function(req, res) {
         if (oneDocument.length !== 0) {
             res.json(oneDocument);
         } else {
-            console.log(404);
             res.status(404).end();
         }
     });
