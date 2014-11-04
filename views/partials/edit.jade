@@ -1,8 +1,16 @@
 .container
-  h1 Photo edit
-  h3 {{ image.title }}
-  p Da new title yo: 
-    input(type='text', ng-model='image.newtitle')
-    button(ng-click='update()') update
-  p
-    img(ng-src='{{ image.binaryData }}', width='200px')
+  h1 Edit
+  .row
+  .col-sm-6.col-md-6
+    .thumbnail
+      img(ng-src='{{ image.binaryData }}', width='500px', class='img-rounded')
+      .caption
+        h3(ng-click='editable = "title"', ng-hide='editable === "title"') {{ image.title }}
+        span(ng-show='editable == "title"')
+          form.form-inline(name='titleForm')
+            .form-group
+              input.form-control(type='text', ng-model='image.newtitle', size='{{ image.newtitle.length }}', name='newtitle')
+              button.btn.btn-success(ng-click='update(); editable = ""') Ok
+              button.btn.btn-warning(ng-click='editable = ""') Cancel
+        p {{ image.description }}
+        p #[strong Latitude]: {{ image.location.coordinates[0] }} | #[strong Longitude]: {{ image.location.coordinates[1] }}

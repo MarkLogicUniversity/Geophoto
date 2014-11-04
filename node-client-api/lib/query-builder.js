@@ -52,7 +52,7 @@ function asIndex(index) {
 }
 /** @ignore */
 function addIndex(query, index, isContainer) {
-  var containerOnly = isContainer || false;
+  var containerOnly = (isContainer || false);
   if (index['json-property'] !== undefined) {
     query['json-property'] = index['json-property'];
   } else if (index.element !== undefined) {
@@ -166,21 +166,22 @@ function attribute() {
           args[1].qname : nsName.call(null, args[1])
       };
   case 3:
-    if (!valcheck.isUndefined(args[0].qname))
+    if (!valcheck.isUndefined(args[0].qname)) {
       return {
         element: args[0].qname,
         attribute:{ns: args[1], name: args[2]}
-      };
-    if (!valcheck.isUndefined(args[2].qname))
+      };      
+    } else if (!valcheck.isUndefined(args[2].qname)) {
       return {
         element:{ns: args[0], name: args[1]},
         attribute: args[2].qname
       };
-    if (valcheck.isArray(args[0]))
+    } else if (valcheck.isArray(args[0])) {
       return {
         element: nsName.call(null, args[0]),
         attribute:{ns: args[1], name: args[2]}
       };
+    }
     return {
       element:{ns: args[0], name: args[1]},
       attribute: nsName.call(null, args[2])
@@ -328,6 +329,43 @@ function collection() {
     uri: args
   }};
 }
+function lsqtQuery() {
+  var args = mlutil.asArray.apply(null, arguments);
+  var argLen = args.length;
+  if (argLen < 1) {
+    throw new Error('no temporal collection for lsqt query');
+  }
+
+  var query = {};
+  var seekingWeight = true;
+  var seekingTimestamp = true;
+  var seekingTemporalOption = true;
+  for (var i=0; i < args.length; i++) {
+    var arg = args[i];
+    if (i === 0) {
+      if (!valcheck.isString(arg)) {
+        throw new Error('first argument for current time query must be temporal collection');
+      }
+      query['temporal-collection'] = arg;
+    } else if (seekingWeight && arg.weight) {
+      query.weight = arg.weight;
+      seekingWeight = false;
+    } else if (seekingWeight && valcheck.isNumber(arg)) {
+      query.weight = arg;
+      seekingWeight = false;
+    } else if (seekingTimestamp && valcheck.isString(arg)){
+      query.timestamp = arg;
+      seekingTimestamp = false;
+    } else if (seekingTimestamp && valcheck.isDate(arg)){
+      query.timestamp = arg.toISOString();
+      seekingTimestamp = false;
+    } else if (seekingTemporalOption && arg['temporal-option'] !== undefined) {
+      query['temporal-option'] = arg['temporal-option'];
+      seekingTemporalOption = false;
+    }
+  }
+  return {'lsqt-query': query};
+}
 /**
  * Builds a query naming a JSON property or XML element that must contain
  * the matches for a subquery (which may be a composer query such as those
@@ -356,6 +394,7 @@ function scope() {
   var constraintIndex = null;
   var constraint = {};
   var constraintName;
+  var fragmentScope;
   var hasQuery = false;
   for (var i=0; i < args.length; i++) {
     var arg = args[i];
@@ -365,7 +404,7 @@ function scope() {
       continue;
     }
     if (fragmentScope === undefined) {
-      var fragmentScope = arg['fragment-scope'];
+      fragmentScope = arg['fragment-scope'];
       if (fragmentScope !== undefined) {
         constraint['fragment-scope'] = fragmentScope;
         continue;
@@ -430,9 +469,9 @@ function datatype() {
   case 0:
     throw new Error('missing datatype: '+args);
   case 1:
-    return {datatype: args[0].match(/^xs:/) ? args[0] : 'xs:'+args[0]};
+    return {datatype: /^xs:/.test(args[0]) ? args[0] : 'xs:'+args[0]};
   default:
-    return {datatype: args[0].match(/^xs:/) ? args[0] : 'xs:'+args[0],
+    return {datatype: /^xs:/.test(args[0]) ? args[0] : 'xs:'+args[0],
         'collation': args[1]};
   }
 }
@@ -548,8 +587,9 @@ function fragmentScope() {
 }
 function geoAttributePair() {
   var args = mlutil.asArray.apply(null, arguments);
-  if (args.length < 3)
-    throw new Error('not enough parameters: '+args);
+  if (args.length < 3) {
+    throw new Error('not enough parameters for geospatial element query: '+args);
+  }
   var query = {};
   var keys = ['parent', 'lat', 'lon'];
   var iArg=0;
@@ -578,29 +618,43 @@ function geoAttributePair() {
 }
 function geoElement() {
   var args = mlutil.asArray.apply(null, arguments);
-  if (args.length < 2)
+  var argLen = args.length;
+  if (argLen < 1) {
     throw new Error('not enough parameters: '+args);
-  var query = {};
-  var keys = ['parent', 'element'];
-  for (var i=0; i < keys.length; i++) {
-    var key = keys[i];
+  }
+  var maxIndex = Math.min(argLen, 2);
+  var query    = {};
+  var elemName = null;
+  var i=0;
+  while (i < maxIndex) {
     var arg = args[i];
     if (arg.qname) {
-      query[key] = arg.qname;
+      arg = arg.qname;
     } else if (valcheck.isString(arg)) {
-      query[key] = nsName.call(null, arg);
+      arg = nsName.call(null, arg);
     } else if (arg.element) {
-      query[key] = arg.element;
+      arg = arg.element;
     } else {
-      throw new Error('no parameter for '+key+': '+JSON.stringify(arg));
+      break;
     }
+    if (elemName !== null) {
+      query.parent = elemName;
+    }
+    elemName = arg;
+    i++;
   }
-  return geoQuery('geo-elem', args, query, 2);
+  if (elemName === null) {
+    throw new Error('element name required for geospatial query: '+args);
+  }
+  query.element = elemName;
+  elemName = null;
+  return geoQuery('geo-elem', args, query, i);
 }
 function geoElementPair() {
   var args = mlutil.asArray.apply(null, arguments);
-  if (args.length < 3)
+  if (args.length < 3) {
     throw new Error('not enough parameters: '+args);
+  }
   var query = {};
   var keys = ['parent', 'lat', 'lon'];
   for (var i=0; i < keys.length; i++) {
@@ -618,10 +672,61 @@ function geoElementPair() {
   }
   return geoQuery('geo-elem-pair', args, query, 3);
 }
+function geoProperty() {
+  var args = mlutil.asArray.apply(null, arguments);
+  var argLen = args.length;
+  if (argLen < 1) {
+    throw new Error('not enough parameters for geospatial property query: '+args);
+  }
+  var maxIndex = Math.min(argLen, 2);
+  var query    = {};
+  var propName = null;
+  var i=0;
+  while (i < maxIndex) {
+    var arg = args[i];
+    if (arg['json-property']) {
+      arg = arg['json-property'];
+    } else if (!valcheck.isString(arg)) {
+      break;
+    }
+    if (propName !== null) {
+      query['parent-property'] = propName;
+    }
+    propName = arg;
+    i++;
+  }
+  if (propName === null) {
+    throw new Error('property name required for geospatial query: '+args);
+  }
+  query['json-property'] = propName;
+  propName = null;
+  return geoQuery('geo-json-property', args, query, i);
+}
+function geoPropertyPair() {
+  var args = mlutil.asArray.apply(null, arguments);
+  if (args.length < 3) {
+    throw new Error('not enough parameters: '+args);
+  }
+  var query = {};
+  var keys = ['parent-property', 'lat-property', 'lon-property'];
+  for (var i=0; i < keys.length; i++) {
+    var key = keys[i];
+    var arg = args[i];
+    if (valcheck.isString(arg)) {
+      query[key] = arg;
+    } else if (arg['json-property']) {
+      query[key] = arg['json-property'];
+    } else {
+      throw new Error('no parameter for '+key+': '+JSON.stringify(arg));
+    }
+  }
+  return geoQuery('geo-json-property-pair', args, query, 3);
+}
 function geoPath() {
   var args = mlutil.asArray.apply(null, arguments);
-  if (args.length < 1)
+  if (args.length < 1) {
     throw new Error('not enough parameters: '+args);
+  }
   var query = {};
   var arg = args[0];
   if (arg['path-index']) {
@@ -764,12 +869,12 @@ function heatmap() {
 
   return {'heatmap': hmap};
 }
-function geoOption() {
+function geoOptions() {
   return {'geo-option': mlutil.asArray.apply(null, arguments)};
 }
 function latlon() {
   var args = mlutil.asArray.apply(null, arguments);
-  if (args.length != 2)
+  if (args.length !== 2)
     throw new Error('incorrect parameters: '+args);
   return {latitude: args[0], longitude: args[1]};
 }
@@ -1014,6 +1119,118 @@ function nsName() {
     throw new Error('too many arguments: '+args.length);
   }
 }
+function period() {
+  var startDate = null;
+  var endDate   = null;
+
+  var max = Math.min(arguments.length, 2);
+  for (var i=0; i < max; i++) {
+    var arg = arguments[i];
+    if (valcheck.isDate(arg)) {
+      arg = arg.toISOString();
+    } else if (!valcheck.isString(arg)) {
+      continue;
+    }
+
+    if (valcheck.length === 0) {
+      continue;
+    }
+
+    switch (i) {
+    case 0:
+      startDate = arg;
+      break;
+    case 1:
+      endDate = arg;
+      break;
+    }
+  }
+
+  if (valcheck.isNull(startDate)) {
+    throw new Error('period must have at least one datetime');
+  }
+  var periodVal = {'period-start': startDate};
+
+  if (!valcheck.isNull(endDate)) {
+    periodVal['period-end'] = endDate;
+  }
+
+  return periodVal;
+}
+function periodCompare() {
+  var argLen = arguments.length;
+
+  var arg = (argLen > 2) ? arguments[0] : null;
+  var compareAxis1 = valcheck.isString(arg) ? arg : null;
+
+  arg = (argLen > 2) ? arguments[1] : null;
+  var compareOperator = valcheck.isString(arg) ? arg : null;
+
+  arg = (argLen > 2) ? arguments[2] : null;
+  var compareAxis2 = valcheck.isString(arg) ? arg : null;
+
+  arg = (argLen > 3) ? arguments[3] : null;
+  arg = (!valcheck.isNullOrUndefined(arg)) ? arg['temporal-option'] : null;
+  var temporalOption = (!valcheck.isNullOrUndefined(arg)) ? arg : null;
+
+  if (valcheck.isNull(compareAxis1) || valcheck.isNull(compareOperator) ||
+      valcheck.isNull(compareAxis2)) {
+    throw new Error('period compare query must have axis1, operator, and axis2');
+  }
+
+  var query = {
+      axis1:               compareAxis1,
+      'temporal-operator': compareOperator,
+      axis2:               compareAxis2
+  };
+  if (!valcheck.isNull(temporalOption)) {
+    query['temporal-option'] = temporalOption;
+  }
+
+  return {'period-compare-query': query};
+}
+function periodRange() {
+  var argLen = arguments.length;
+
+  var arg = (argLen > 2) ? arguments[0] : null;
+  var rangeAxis =
+    valcheck.isArray(arg)  ? arg   :
+    valcheck.isString(arg) ? [arg] :
+    null;
+
+  arg = (argLen > 2) ? arguments[1] : null;
+  var rangeOperator = valcheck.isString(arg) ? arg : null;
+
+  arg = (argLen > 2) ? arguments[2] : null;
+  var rangePeriod =
+    valcheck.isArray(arg) ? arg   :
+    (!valcheck.isNullOrUndefined(arg['period-start'])) ? [arg] :
+    null;
+
+  arg = (argLen > 3) ? arguments[3] : null;
+  arg = (!valcheck.isNullOrUndefined(arg)) ? arg['temporal-option'] : null;
+  var temporalOption = (!valcheck.isNullOrUndefined(arg)) ? arg : null;
+
+  if (valcheck.isNull(rangeAxis) || rangeAxis.length === 0 ||
+      valcheck.isNull(rangeOperator) ||
+      valcheck.isNull(rangePeriod) || rangePeriod.length === 0) {
+    throw new Error('period range query must have axis, operator, and period');
+  }
+
+  var query = {
+      axis:                rangeAxis,
+      'temporal-operator': rangeOperator,
+      period:              rangePeriod
+  };
+  if (!valcheck.isNull(temporalOption)) {
+    query['temporal-option'] = temporalOption;
+  }
+
+  return {'period-range-query': query};
+}
+function temporalOptions() {
+  return {'temporal-option': mlutil.asArray.apply(null, arguments)};
+}
 /**
  * Builds a query over a range index. You must supply either a comparison
  * operator with one or more values or a binding to parse the comparison and
@@ -1121,15 +1338,17 @@ function range() {
     } else {
       throw new Error('range has both binding and query: '+args);
     }
+ /* TODO: delete now that the datatype isrequired only where there are
+  * multiple indexes on the same thing with different datatypes
     if (seekingDatatype) {
       var firstValue = values[0];
-      // TODO: datatype optional instead of defaulted
       if (valcheck.isString(firstValue)) {
         constraint.type = 'xs:string';
       } else if (valcheck.isBoolean(firstValue)) {
         constraint.type = 'xs:boolean';
       }
     }
+ */
   } else if (defaultConstraint !== undefined) {
     wrapper['default'] = {range: constraint};
   } else {
@@ -1165,8 +1384,9 @@ function rangeOptions() {
 }
 function southWestNorthEast() {
   var args = mlutil.asArray.apply(null, arguments);
-  if (args.length != 4)
+  if (args.length !== 4) {
     throw new Error('incorrect parameters: '+args);
+  }
   return {south: args[0], west: args[1], north: args[2], east: args[3]};
 }
 /**
@@ -1295,6 +1515,7 @@ function textQuery(variant, args) {
   
   return wrapper;
 }
+
 /**
  * Builds a query for matching the entire text value contained by a JSON property
  * or XML element.
@@ -1633,7 +1854,7 @@ function sort() {
         sorter.direction = arg;
         break;
       default:
-        if (!isScore && arg.match(/^xs:/)) {
+        if (!isScore && /^xs:/.test(arg)) {
           sorter.type = arg;
         }
         break;
@@ -1651,6 +1872,19 @@ function sort() {
   }
 
   return sorter;
+}
+
+function transform(name, params) {
+  if (valcheck.isNullOrUndefined(name)) {
+    throw new Error('transform without name');      
+  }
+
+  var transformList = [name];
+  if (!valcheck.isNullOrUndefined(params)) {
+    transformList.push(params);
+  }
+
+  return {'document-transform': transformList};
 }
 
 /**
@@ -1671,12 +1905,32 @@ function slice() {
   var argLen = args.length;
   // TODO: if empty, clear the clause
 
-  var pageStart  = (argLen > 1 || (argLen === 1 && valcheck.isNumber(args[0]))) ?
-      args[0] : null;
-  var pageLength = (argLen > 2 || (argLen === 2 && valcheck.isNumber(args[1]))) ?
-      args[1] : null;
-
   var sliceClause = {};
+
+  var pageStart  = null;
+  var pageLength = null;
+
+  var argMax = Math.min(argLen, 3);
+  var arg    = null;
+  for (var i=0; i < argMax; i++) {
+    arg = args[i];
+    if (valcheck.isNumber(arg)) {
+      switch(i) {
+      case 0:
+        pageStart = arg;
+        break;
+      case 1:
+        pageLength = arg;
+        break;
+      }
+    } else if (!valcheck.isUndefined(arg['transform-results'])) {
+      sliceClause['transform-results'] = arg['transform-results'];
+    } else if (!valcheck.isUndefined(arg['extract-document-data'])) {
+      sliceClause['extract-document-data'] = arg['extract-document-data'];
+    } else if (!valcheck.isUndefined(arg['document-transform'])) {
+      sliceClause['document-transform'] = arg['document-transform'];
+    }
+  }
 
   if (pageStart !== null && pageLength !== 0) {
     if (pageStart === 0 && pageLength === null) {
@@ -1687,9 +1941,7 @@ function slice() {
   }
   if (pageLength !== null) {
     sliceClause['page-length'] = pageLength;
-  } 
-
-// TODO: iterator
+  }
 
   self.sliceClause = sliceClause;
 
@@ -1847,8 +2099,13 @@ function facet() {
     facetWrapper.custom = constraint;
   } else {
     facetWrapper.range = constraint;
-    // TODO: datatype optional instead of defaulted
+/* TODO: delete now that the datatype isrequired only where there are
+ * multiple indexes on the same thing with different datatypes
     constraint.type = ((datatype !== undefined) ? datatype : 'xs:string');
+ */
+    if (!valcheck.isNullOrUndefined(datatype)) {
+      constraint.type = datatype;
+    }
     var constraintKeys = Object.keys(constraintIndex);
     var constraintKeyLen = constraintKeys.length;
     for (var j=0; j < constraintKeyLen; j++) {
@@ -1897,19 +2154,23 @@ function calculateFunction() {
 
   var moduleName = args[0];
 
+  var rootname = mlutil.rootname(moduleName);
+  if (rootname === null) {
+    throw new Error('library must have an extension of .xqy');
+  }
+
   return {
       'start-facet': {
         apply: 'start-facet',
-        ns:    'http://marklogic.com/query/custom/'+moduleName,
-        at:    '/ext/marklogic/query/custom/'+moduleName+'.xqy'
+        ns:    'http://marklogic.com/query/custom/'+rootname,
+        at:    '/ext/marklogic/query/custom/'+moduleName
       },
       'finish-facet': {
         apply: 'finish-facet',
-        ns:    'http://marklogic.com/query/custom/'+moduleName,
-        at:    '/ext/marklogic/query/custom/'+moduleName+'.xqy'
+        ns:    'http://marklogic.com/query/custom/'+rootname,
+        at:    '/ext/marklogic/query/custom/'+moduleName
       }
   };
-
 }
 
 /**
@@ -2041,11 +2302,11 @@ function anchor() {
 }
 /** @ignore */
 function twoValueBucket(bucket, value1, value2) {
-  if (     value1 === '<') bucket.lt = value2;
-  else if (value2 === '>') bucket.lt = value1;
-  else if (value1 === '>') bucket.ge = value2;
-  else if (value2 === '<') bucket.ge = value1;
-  else return false;
+  if (     value1 === '<') { bucket.lt = value2; }
+  else if (value2 === '>') { bucket.lt = value1; }
+  else if (value1 === '>') { bucket.ge = value2; }
+  else if (value2 === '<') { bucket.ge = value1; }
+  else                     { return false;       }
   return true;
 }
 /** @ignore */
@@ -2075,19 +2336,48 @@ function threeValueBucket(bucket, anchor1, value1, comparator, anchor2, value2) 
 }
 /** @ignore */
 function defaultConstraintName(index) {
-  var name = index['json-property'];
-  if (name !== undefined) {
-    return name;
+  var indexdef = index['json-property'];
+  if (indexdef !== undefined) {
+    return indexdef;
   }
-  name = index.field;
-  if (name !== undefined) {
-    return name;
+  indexdef = index.field;
+  if (indexdef !== undefined) {
+    return indexdef;
   }
-  name = index.element;
-  if (name !== undefined && index.attribute === undefined) {
-    return name;
+  indexdef = index.element;
+  if (indexdef !== undefined && index.attribute === undefined) {
+    return indexdef.name;
   }
   return null;
+}
+
+function aggregates() {
+  var args = mlutil.asArray.apply(null, arguments);
+  var argLen = args.length;
+  if (argLen < 1) {
+    throw new Error('aggregates must specify at least one built-in function or UDF');
+  }
+
+  var aggregateFunctions = [];
+  for (var i=0; i < argLen; i++) {
+    var arg = args[i];
+    if (valcheck.isString(arg)) {
+      aggregateFunctions.push({apply:arg});
+    } else if (!valcheck.isUndefined(arg.udf)) {
+      aggregateFunctions.push(arg);
+    } else if (valcheck.isArray(arg) && arg.length > 1) {
+      aggregateFunctions.push({udf:arg[0], apply:arg[1]});
+    }
+  }
+
+  return {aggregates: aggregateFunctions};
+}
+function udf() {
+  if (arguments.length < 1) {
+    throw new Error('UDF calls must specify the plugin and function');
+  }
+
+  return ({udf:arguments[0], apply:arguments[1]});
 }
 
 /**
@@ -2301,11 +2591,16 @@ function parseFunction() {
 
   var moduleName = args[0];
 
+  var rootname = mlutil.rootname(moduleName);
+  if (rootname === null) {
+    throw new Error('library must have an extension of .xqy');
+  }
+
   var constraint = {
       parse: {
         apply: 'parse',
-        ns:    'http://marklogic.com/query/custom/'+moduleName,
-        at:    '/ext/marklogic/query/custom/'+moduleName+'.xqy'
+        ns:    'http://marklogic.com/query/custom/'+rootname,
+        at:    '/ext/marklogic/query/custom/'+moduleName
       },
       facet: false
   };
@@ -2332,6 +2627,80 @@ function parseFunction() {
     name:   constraintName,
     custom: constraint
     };
+}
+
+function extract() {
+  var args = mlutil.asArray.apply(null, arguments);
+  var argLen = args.length;
+  if (argLen < 1) {
+    throw new Error('must specify paths to extract');
+  }
+
+  var extractdef = {};
+
+  var arg = args[0];
+  if (valcheck.isString(arg)) {
+    extractdef['extract-path'] = args;
+  } else {
+    var paths = arg.paths;
+    if (valcheck.isString(paths)) {
+      extractdef['extract-path'] = [paths];
+    } else if (valcheck.isArray(paths)) {
+      extractdef['extract-path'] = paths;
+    } else if (valcheck.isUndefined(paths)) {
+      throw new Error('first argument does not have key for paths to extract');    
+    }
+    
+    var namespaces = arg.namespaces;
+    if (!valcheck.isUndefined(namespaces)) {
+      extractdef.namespaces = namespaces;
+    }
+
+    var selected = arg.selected;
+    if (!valcheck.isUndefined(selected)) {
+      extractdef.selected = selected;
+    }
+  }
+
+  return {'extract-document-data': extractdef};
+}
+
+function snippet() {
+  var args = mlutil.asArray.apply(null, arguments);
+  var argLen = args.length;
+
+  var builtins = {
+      empty:              'empty-snippet',
+      'empty-snippet':    'empty-snippet',
+      metadata:           'metadata-snippet',
+      'metadata-snippet': 'metadata-snippet',
+      snippet:            'snippet'
+  };
+
+  var snippeter = {
+      apply: 'snippet'
+  };
+
+  var argMax = Math.min(argLen, 2);
+  var arg = null;
+  var builtin = null;
+  for (var i=0; i < argMax; i++) {
+    arg = args[i];
+    if (valcheck.isString(arg)) {
+      builtin = builtins[arg];
+      if (!valcheck.isUndefined(builtin)) {
+        snippeter.apply = builtin;
+      } else {
+        snippeter.ns    = 'http://marklogic.com/snippet/custom/'+arg;
+        snippeter.at    = '/ext/marklogic/snippet/custom/'+arg+'.xqy';
+        snippeter.apply = 'snippet';
+      }
+    } else {
+      mlutil.copyProperties(arg, snippeter);
+    }
+  }
+
+  return {'transform-results': snippeter};
 }
 
 /**
@@ -2387,6 +2756,7 @@ function withOptions() {
 }
 
 module.exports = {
+    aggregates:         aggregates,
     anchor:             anchor,
     and:                and,
     andNot:             andNot,
@@ -2402,11 +2772,13 @@ module.exports = {
     circle:             circle,
     collection:         collection,
     copyFrom:           copyFromQueryBuilder,
+    lsqtQuery:          lsqtQuery,
     datatype:           datatype,
     directory:          directory,
     document:           document,
     documentFragment:   documentFragment,
     element:            element,
+    extract:            extract,
     facet:              facet,
     facetOptions:       facetOptions,
     field:              field,
@@ -2414,8 +2786,10 @@ module.exports = {
     geoAttributePair:   geoAttributePair,
     geoElement:         geoElement,
     geoElementPair:     geoElementPair,
+    geoOptions:         geoOptions,
     geoPath:            geoPath,
-    geoOption:          geoOption,
+    geoProperty:        geoProperty,
+    geoPropertyPair:    geoPropertyPair,
     heatmap:            heatmap,
     latlon:             latlon,
     locks:              locks,
@@ -2435,16 +2809,23 @@ module.exports = {
     parseBindings:      parseBindings,
     parsedFrom:         parsedFrom,
     parseFunction:      parseFunction,
+    period:             period,
+    periodCompare:      periodCompare,
+    periodRange:        periodRange,
     range:              range,
     rangeOptions:       rangeOptions,
     score:              score,
     scope:              scope,
     slice:              slice,
+    snippet:            snippet,
     sort:               sort,
     southWestNorthEast: southWestNorthEast,
+    temporalOptions:    temporalOptions,
     term:               term,
     termOptions:        termOptions,
+    transform:          transform,
     value:              value,
+    udf:                udf,
     weight:             weight,
     where:              where,
     withOptions:        withOptions,

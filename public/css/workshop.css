@@ -18,7 +18,12 @@ body {
 }
 #map {
     height:450px;
+    margin-top: 10px;
     margin-bottom: 10px;
+}
+.fixed {
+  height: 200px;
+  overflow: scroll;
 }
 .infoWindowHeader {
   display: block;

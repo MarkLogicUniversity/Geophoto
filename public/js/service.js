@@ -18,3 +18,19 @@ app.service('PhotoService', ['$http',
         }
     }
 ]);
+
+app.factory('httpRequestInterceptor', ['$q', '$location', 
+    function ($q, $location) {
+        return {
+            'response': function (response) {
+                return response;
+            },
+            'responseError': function (rejection) {
+                if(rejection.status === 404) {
+                    $location.path('/404');
+                }
+                return $q.reject(rejection);
+            }
+        };
+    }
+]);

@@ -9,7 +9,7 @@ var marklogic =require('./node-client-api/lib/marklogic.js'),
 
 var selectAll = function selectAll(callback) {
     var docs = [];
-    db.query(q.where(q.collection('image')).slice(0,300)).result(function(documents) {
+    db.documents.query(q.where(q.collection('image')).slice(0,300)).result(function(documents) {
         documents.forEach(function (document) {
             docs.push(document.content);
         });
@@ -19,7 +19,7 @@ var selectAll = function selectAll(callback) {
 
 var selectOne = function selectOne(uri, callback) {
     var oneDocument = [];
-    db.read('/image/' + uri + '.json').result().then(function (doc) {
+    db.documents.read('/image/' + uri + '.json').result().then(function (doc) {
         doc.forEach(function (d) {
             oneDocument.push(d.content);
         });
@@ -29,7 +29,7 @@ var selectOne = function selectOne(uri, callback) {
 
 var selectImageData = function selectImageData(uri, callback) {
     var imageData = [];
-    db.read('/binary/' + uri).result().then(function (data) {
+    db.documents.read('/binary/' + uri).result().then(function (data) {
         data.forEach(function (d) {
             imageData.push(new Buffer(d.content, 'binary').toString('base64'));
         });
@@ -38,10 +38,11 @@ var selectImageData = function selectImageData(uri, callback) {
 };
 
 var patchDocument = function(uri, update, callback) {
-    db.read('/image/' + uri + '.json').result().
+    console.log('update', update);
+    db.documents.read('/image/' + uri + '.json').result().
     then(function(document) {
         if (document[0].content.title) {
-            db.patch('/image/' + uri + '.json',
+            db.documentspatch('/image/' + uri + '.json',
                 p.pathLanguage('jsonpath'),
                 p.replace('$.title', update)
             ).result().
@@ -49,7 +50,7 @@ var patchDocument = function(uri, update, callback) {
                 callback(console.log('updated', response));
             });        
         } else {
-            db.patch('/image/' + uri + '.json',
+            db.documents.patch('/image/' + uri + '.json',
                 p.pathLanguage('jsonpath'),
                 p.replaceInsert('$.title', '$.filename', 'after', {title: update})
             ).result().
@@ -72,7 +73,12 @@ var apiimage = function(req, res) {
     var id = req.params.id;
     var doc = [];
     selectOne(id, function (oneDocument) {
-        res.json(oneDocument);
+        if (oneDocument.length !== 0) {
+            res.json(oneDocument);
+        } else {
+            console.log(404);
+            res.status(404).end();
+        }
     });
 };
 

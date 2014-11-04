@@ -34,8 +34,8 @@ app.controller('MapController', ['$scope', 'PhotoService',
             percentage = 0;
 
         var mapOptions = {
-            zoom: 3,
-            center: new google.maps.LatLng(52.0400, 0.7600),
+            zoom: 2,
+            center: new google.maps.LatLng(10, 0),
             mapTypeId: google.maps.MapTypeId.ROAD
         };
 
@@ -106,16 +106,23 @@ app.controller('MapController', ['$scope', 'PhotoService',
     }
 ]);
 
-app.controller('PhotoController', ['$scope', '$routeParams', '$route', 'PhotoService',
-    function($scope, $routeParams, $route, PhotoService) {
+app.controller('PhotoController', ['$scope', '$routeParams', '$location', '$route', 'PhotoService',
+    function($scope, $routeParams, $location, $route, PhotoService) {
+        
+        $scope.editable = '';
 
         var id = $routeParams.id;
-        PhotoService.showOne(id).success(function (data) {
+        PhotoService.showOne(id)
+        .success(function (data, status, headers, config) {
+            
             PhotoService.showImage(id).success(function(d) {
                 $scope.image.binaryData = 'data:image/jpg;base64,' + d[0];
             });
             $scope.image = data[0];
             $scope.image.title = data[0].title || data[0].filename;
+        })
+        .error(function (data, status, headers, config) {
+            console.log(data); 
         });
 
         $scope.update = function() {

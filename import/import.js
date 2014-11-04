@@ -48,7 +48,7 @@ var fs = require('fs'),
             var file = path + '/' + data.filename;
         }
 
-        db.write({
+        db.documents.write({
             uri: '/image/' + data.filename + '.json',
             contentType: 'application/json',
             collections: ['image'],
@@ -57,7 +57,7 @@ var fs = require('fs'),
             console.log('Successfully inserted ', response.documents[0].uri);
         });
 
-        db.write({
+        db.documents.write({
             uri: '/binary/' + data.filename,
             contentType: 'image/jpeg',
             collections: ['binary'],

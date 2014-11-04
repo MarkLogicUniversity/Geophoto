@@ -1,14 +1,14 @@
 .container
-  h1 Map yay
   div
     #map
     div.progress(ng-show='markers.message')
         div.progress-bar.progress-bar-info(role='progressbar', aria-valuenow='{{markers.percentage}}', aria-valuemin='100', aria-valuemax='100', style='width: {{markers.percentage}}%;') {{ markers.percentage }}%
     p(ng-show='markers.message') {{ markers.message }}
-    .row
-        .col-sm-2.col-md-2(ng-repeat='marker in markers')
+    .row(class='fixed')
+        .col-sm-3.col-md-3(ng-repeat='marker in markers')
             p
-                a(href='#', ng-click='openInfoWindow($event, marker)') {{ marker.title | limitTo: 10 }} 
-                |  (
-                a(href='#/edit/{{ marker.id }}') edit
-                | )
+                a(href='#', ng-click='openInfoWindow($event, marker)', role='button', class='btn btn-sm btn-default') {{ marker.title | limitTo: 12 }} 
+                    i.glyphicon(class='glyphicon-search')
+                | 
+                a(href='#/edit/{{ marker.id }}', role='button', class='btn btn-sm btn-warning')
+                    i.glyphicon(class='glyphicon-pencil')

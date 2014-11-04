@@ -15,20 +15,83 @@
  */
 var valcheck             = require('core-util-is');
 var winston              = require('winston');
+
+var mlutil               = require('./mlutil.js');
 var mlrest               = require('./mlrest.js');
+
 var documents            = require('./documents.js');
+var graphs               = require('./graphs.js');
+var values               = require('./values.js');
 var extlibs              = require('./extlibs.js');
 var restServerProperties = require('./rest-server-properties.js');
 var transactions         = require('./transactions.js');
 var transforms           = require('./transforms.js');
+var resourcesConfig      = require('./resources-config.js');
+var resourcesExec        = require('./resources-exec.js');
+var serverExec           = require('./server-exec.js');
+
 var queryBuilder         = require('./query-builder.js');
 var patchBuilder         = require('./patch-builder.js');
+var valuesBuilder        = require('./values-builder.js');
 
 /**
  * Provides functions to connect to a MarkLogic database and to build
  * requests for the database.
  * @module marklogic
  */
+
+function ExtlibsWrapper(extlibs, name, dir) {
+  this.extlibs = extlibs;
+  this.name    = name;
+  this.dir     = dir;
+}
+function listExtlibsWrapper() {
+  return this.extlibs.list.call(this.extlibs, this.dir);
+}
+ExtlibsWrapper.prototype.list = listExtlibsWrapper;
+function readExtlibsWrapper() {
+  return this.extlibs.read.apply(
+      this.extlibs,
+      expandExtlibsWrapper.call(this, 'reading', mlutil.asArray.apply(null, arguments))
+      );
+}
+ExtlibsWrapper.prototype.read = readExtlibsWrapper;
+function removeExtlibsWrapper() {
+  return this.extlibs.remove.apply(
+      this.extlibs,
+      expandExtlibsWrapper.call(this, 'removing', mlutil.asArray.apply(null, arguments))
+      );
+}
+ExtlibsWrapper.prototype.remove = removeExtlibsWrapper;
+function writeExtlibsWrapper() {
+  var args = expandExtlibsWrapper.call(this, 'writing', mlutil.asArray.apply(null, arguments));
+  var module = args[0];
+  var ext = mlutil.extension(module);
+  if (ext === null) {
+    throw new Error(module+' module for '+this.name+' library must have an extension of .sjs or .xqy');
+  }
+  switch(ext) {
+  case 'sjs':
+    args[0] = 'application/javascript';
+    break;
+  case 'xqy':
+    args[0] = 'application/xquery';
+    break;
+  default:
+    throw new Error(module+' module for '+this.name+' library does not have .sjs or .xqy extension');
+  }
+  args.unshift(module);
+  return this.extlibs.write.apply(this.extlibs, args);
+}
+ExtlibsWrapper.prototype.write = writeExtlibsWrapper;
+function expandExtlibsWrapper(action, args) {
+  var module = (args.length > 0) ? args[0] : null;
+  if (!valcheck.isString(module)) {
+    throw new Error('no module name for '+action+' '+this.name+' library');
+  }
+  args[0] = this.dir + module;
+  return args;
+}
 
 /**
  * A client object configured to write, read, query, and perform other
@@ -76,7 +139,7 @@ function MarkLogicClient(connectionParams) {
    * @memberof! DatabaseClient#
    * @type {documents} 
    */
-  this.documents    = new documents(this);
+  this.documents    = documents.create(this);
   /**
    * Provides functions that open, commit, or rollback multi-statement
    * transactions.
@@ -85,6 +148,12 @@ function MarkLogicClient(connectionParams) {
    * @type {transactions} 
    */
   this.transactions = new transactions(this);
+
+  this.graphs    = new graphs(this);
+  this.resources = new resourcesExec(this);
+  this.values    = new values(this);
+
+  var configExtlibs = new extlibs(this);
 
   /**
    * Provides access to namespaces that configure the REST server for the client.
@@ -99,7 +168,18 @@ function MarkLogicClient(connectionParams) {
    * maintain the transform extensions on the REST server
    */
   this.config = {
-      extlibs:     new extlibs(this),
+      extlibs:     configExtlibs,
+
+      patch: {
+          replace: new ExtlibsWrapper(configExtlibs, 'patch replace', '/marklogic/patch/apply/')
+      },
+      query: {
+          custom:  new ExtlibsWrapper(configExtlibs, 'custom query',  '/marklogic/query/custom/'),
+          snippet: new ExtlibsWrapper(configExtlibs, 'query snippet', '/marklogic/snippet/custom/')
+      },
+
+      resources:   new resourcesConfig(this),
+
       serverprops: new restServerProperties(this),
       transforms:  new transforms(this)
   };
@@ -107,44 +187,83 @@ function MarkLogicClient(connectionParams) {
   // to inspect
   // setClientLogger.call(this, {level:'debug'});
 }
+MarkLogicClient.prototype.eval       = serverExec.serverJavaScriptEval;
+MarkLogicClient.prototype.xqueryEval = serverExec.serverXQueryEval;
+MarkLogicClient.prototype.invoke     = serverExec.serverInvoke;
 
-// operation shortcuts
-function createReadStreamClient() {
-  return this.documents.createReadStream.apply(this.documents, arguments);
-}
-MarkLogicClient.prototype.createReadStream = createReadStreamClient;
-function createWriteStreamClient() {
-  return this.documents.createWriteStream.apply(this.documents, arguments);
-}
-MarkLogicClient.prototype.createWriteStream = createWriteStreamClient;
-function patchClient() {
-  return this.documents.patch.apply(this.documents, arguments);
-}
-MarkLogicClient.prototype.patch = patchClient;
+// quick path operations
 function probeClient() {
-  return this.documents.probe.apply(this.documents, arguments);
+  return documents.probeImpl.call(this.documents, true, mlutil.asArray.apply(null, arguments));
 }
 MarkLogicClient.prototype.probe = probeClient;
-function queryClient() {
-  return this.documents.query.apply(this.documents, arguments);
+function queryClient(collection, builtQuery) {
+  if (!valcheck.isString(collection)) {
+    throw new Error('must specify at least one collection for quick document queries');
+  }
+
+  if (valcheck.isNullOrUndefined(builtQuery)) {
+    builtQuery = queryBuilder.where();
+  }
+
+  return documents.queryImpl.call(this.documents, collection, true, builtQuery);
 }
-MarkLogicClient.prototype.query = queryClient;
+MarkLogicClient.prototype.queryCollection = queryClient;
 function readClient() {
-  return this.documents.read.apply(this.documents, arguments);
+  return documents.readImpl.call(this.documents, true, mlutil.asArray.apply(null, arguments));
 }
 MarkLogicClient.prototype.read = readClient;
 function removeClient() {
-  return this.documents.remove.apply(this.documents, arguments);
+  return documents.removeImpl.call(this.documents, true, mlutil.asArray.apply(null, arguments));
 }
 MarkLogicClient.prototype.remove = removeClient;
-function removeAllClient() {
-  return this.documents.removeAll.apply(this.documents, arguments);
+function removeCollectionClient(collection) {
+  if (!valcheck.isString(collection)) {
+    throw new Error('must specify at least one collection for quick document remove');
+  }
+
+  return documents.removeCollectionImpl.call(this.documents, true, {collection: collection});
 }
-MarkLogicClient.prototype.removeAll = removeAllClient;
+MarkLogicClient.prototype.removeCollection = removeCollectionClient;
 function writeClient() {
-  return this.documents.write.apply(this.documents, arguments);
+  var argLen = arguments.length;
+  if (argLen < 2) {
+    throw new Error('must specify both a collection and JavaScript object for quick object write');
+  }
+
+  var collection = arguments[0];
+  if (!valcheck.isString(collection)) {
+    throw new Error('must specify at least one collection for quick object write');
+  }
+
+  var arg = arguments[1];
+
+  var documentList = [];
+  var i = null;
+  if (valcheck.isArray(arg)) {
+    for (i = 0; i < arg.length; i++) {
+      documentList.push({
+        collections: collection,
+        contentType: 'application/json',
+        directory:   '/',
+        extension:   '.json',
+        content:     arg[i]
+      });
+    }
+  } else {
+    for (i = 1; i < arguments.length; i++) {
+      documentList.push({
+        collections: collection,
+        contentType: 'application/json',
+        directory:   '/',
+        extension:   '.json',
+        content:     arguments[i]
+      });
+    }
+  }
+
+  return documents.writeImpl.call(this.documents, true, documentList);
 }
-MarkLogicClient.prototype.write = writeClient;
+MarkLogicClient.prototype.writeCollection = writeClient;
 
 function releaseMarkLogicClient() {
   mlrest.releaseClient.apply(this, arguments);
@@ -240,8 +359,9 @@ function configClientLogger(client, transports) {
 
 /** @ignore */
 function MarkLogicClientFactory(connectionParams) {
-  if (arguments.length === 0)
+  if (arguments.length === 0) {
     throw new Error('no connection parameters');
+  }
 
   return new MarkLogicClient(connectionParams);
 }
@@ -253,11 +373,13 @@ module.exports = {
      * @function
      * @returns {queryBuilder} a helper for defining a document query
      */
-    queryBuilder: queryBuilder,
+    queryBuilder:  queryBuilder,
     /**
      * A factory for creating a document patch builder
      * @function
      * @returns {patchBuilder} a helper for defining a document patch
      */
-    patchBuilder: patchBuilder
+    patchBuilder:  patchBuilder,
+
+    valuesBuilder: valuesBuilder
 };
