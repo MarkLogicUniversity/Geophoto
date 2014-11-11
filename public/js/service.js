@@ -14,6 +14,9 @@ app.service('PhotoService', ['$http',
             },
             add: function(id, update) {
                 return $http.post('/api/image/add/' + id + '/' + update);
+            },
+            search: function(object) {
+                return $http.get('/api/image/search/' + object.radius + '/' + object.lat + '/' + object.lng);
             }
         }
     }

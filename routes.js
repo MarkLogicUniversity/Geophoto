@@ -61,8 +61,28 @@ var patchDocument = function(uri, update, callback) {
     
 };
 
-var apiindex = function(req, res) {
+var geoSearch = function search (object, callback) {
     var docs = [];
+    var radius = parseInt(object.radius);
+    var lat = parseFloat(object.lat);
+    var lng = parseFloat(object.lng);
+    db.documents.query(
+        q.where(
+            q.collection('image'),
+                q.geoPath(
+                   'location/coordinates',
+                    q.circle(radius, lat, lng)
+                )
+            ).slice(0,300).withOptions({categories:['content']})
+        ).result(function(documents) {
+            documents.forEach(function (document) {
+                docs.push(document.content);
+            })
+            callback(docs);
+        });
+};
+
+var apiindex = function(req, res) {
     selectAll(function(documents) {
         res.json(documents);
     });
@@ -99,7 +119,23 @@ var apiadd = function(req, res) {
         res.json(200);
     });
 
-}
+};
+
+var apisearch = function(req, res) {
+    var radius = req.params.radius;
+    var lat = req.params.lat;
+    var lng = req.params.lng;
+    
+    var search = {
+        radius: radius,
+        lat: lat,
+        lng: lng
+    };
+
+    geoSearch(search, function (data) {
+        res.json(data);
+    });
+};
 
 var appindex = function(req, res) {
     res.render('index');
@@ -119,6 +155,7 @@ module.exports = {
         index: apiindex,
         image: apiimage,
         imagedata: apiimagedata,
-        add: apiadd
+        add: apiadd,
+        search: apisearch
     }
 };

@@ -12,6 +12,10 @@ app.config(['$routeProvider', '$httpProvider', function($routeProvider, $httpPro
         templateUrl: 'partials/map',
         controller: 'MapController'
       }).
+      when('/mapsearch', {
+        templateUrl: '/partials/mapsearch',
+        controller: 'MapSearchController'
+      }).
       when('/explorer', {
         templateUrl: 'partials/explorer'
       }).

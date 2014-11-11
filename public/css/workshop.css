@@ -24,6 +24,7 @@ body {
 .fixed {
   height: 200px;
   overflow: scroll;
+  background: #eee;
 }
 .infoWindowHeader {
   display: block;

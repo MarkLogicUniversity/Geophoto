@@ -1,15 +1,15 @@
 .container
   h1 Edit
   .row
-  .col-sm-6.col-md-6
+  .col-sm-12.col-md-12
     .thumbnail
       img(ng-src='{{ image.binaryData }}', width='500px', class='img-rounded')
       .caption
         h3(ng-click='editable = "title"', ng-hide='editable === "title"') {{ image.title }}
-        span(ng-show='editable == "title"')
+        span(ng-show='editable === "title"')
           form.form-inline(name='titleForm')
             .form-group
-              input.form-control(type='text', ng-model='image.newtitle', size='{{ image.newtitle.length }}', name='newtitle')
+              input.form-control(type='text', required='', ng-model='image.newtitle', size='{{ image.newtitle.length }}', name='newtitle')
               button.btn.btn-success(ng-click='update(); editable = ""') Ok
               button.btn.btn-warning(ng-click='editable = ""') Cancel
         p {{ image.description }}

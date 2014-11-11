@@ -1,0 +1,6 @@
+.container
+    div
+        #map
+    ul
+        li(ng-repeat='result in results')
+            a(href='#/edit/{{ result.filename }}') {{ result.title || result.filename }}
