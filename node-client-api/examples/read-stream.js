@@ -23,7 +23,7 @@ console.log('Read a chunked stream for a binary document');
 
 var chunks = 0;
 var length = 0;
-db.documents.read('/countries/uv_flag_2004.gif').stream('chunked').
+db.createReadStream('/countries/uv_flag_2004.gif').
   on('data', function(chunk) {
     chunks++;
     length += chunk.length;

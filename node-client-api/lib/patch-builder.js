@@ -375,9 +375,6 @@ function replace() {
         continue;
       }
     }
-    console.log('content: ', content);
-    console.log('arg: ', arg);
-    console.log('typeof ' + typeof arg);
     if (content === null) {
       content = arg;
       continue;
@@ -401,8 +398,8 @@ function replace() {
   if (!valcheck.isNullOrUndefined(apply)) {
     operation.apply = apply;
   }
-  return console.log(operation);
-  //return {replace: operation};
+
+  return {replace: operation};
 }
 
 /**
@@ -463,11 +460,7 @@ function replaceInsert() {
         continue;
       }
     }
-    console.log('content: ', content);
-    console.log('arg: ', arg);
-    console.log('typeof ' + typeof arg);
     if (content === null) {
-      if (typeof content === 'object')
       content = arg;
       continue;
     }
@@ -493,15 +486,8 @@ function replaceInsert() {
   if (!valcheck.isNullOrUndefined(apply)) {
     operation.apply = apply;
   }
-  return console.log(operation);
-  //return {'replace-insert': operation};
-  //console.log(operation);
-  // console.log(select);
-  // console.log(context);
-  // console.log(position);
-  // console.log(content);
-  // console.log(cardinality);
-  // console.log(apply);
+
+  return {'replace-insert': operation};
 }
 
 /**

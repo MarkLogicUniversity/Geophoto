@@ -37,7 +37,7 @@ function openTxnEventMapper(response, dispatcher) {
 }
 
 /** @ignore */
-function openOutputTransform(headers, data) {
+function openOutputTransform(data) {
   var operation = this;
 
   return {
@@ -60,18 +60,15 @@ function openTransaction() {
   var requestdef = {};
 
   var argLen = arguments.length;
-
-  var sep = '?';
-
   var isFirst = true;
   for (var i=0; i < argLen; i++) {
+    var sep = (isFirst) ? '?' : '&';
     var arg = arguments[i];
     if (valcheck.isString(arg)) {
       requestdef.transactionName = arg;
       path += sep+'name='+encodeURIComponent(arg);
       if (isFirst) {
         isFirst = false;
-        sep = '&';
       } else {
         break;
       }
@@ -79,17 +76,15 @@ function openTransaction() {
       path += sep+'timeLimit='+arg;
       if (isFirst) {
         isFirst = false;
-        sep = '&';
       } else {
         break;
       }
     }
   }
 
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'POST';
-  requestOptions.path = mlutil.databaseParam(connectionParams, path, sep);
+  requestOptions.path = path ;
 
   var operation = mlrest.createOperation(
       'open transaction', this.client, requestOptions, 'empty', 'empty'
@@ -113,13 +108,12 @@ function readTransaction(txid) {
   }
   var path = '/v1/transactions/'+txid+'?format=json';
 
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'GET';
   requestOptions.headers = {
       'Accept': 'application/json'
   };
-  requestOptions.path = mlutil.databaseParam(connectionParams, path, '&');
+  requestOptions.path = path;
 
   var operation = mlrest.createOperation(
       'read transaction', this.client, requestOptions, 'empty', 'single'
@@ -146,7 +140,7 @@ function rollbackTransaction(txid) {
   return finishTransaction(this.client, 'rollback', txid);
 }
 /** @ignore */
-function finishOutputTransform(headers, data) {
+function finishOutputTransform(data) {
   var operation = this;
 
   return {
@@ -161,10 +155,9 @@ function finishTransaction(client, result, txid) {
   }
   var path = '/v1/transactions/'+txid+'?result='+result;
 
-  var connectionParams = client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
+  var requestOptions = mlutil.copyProperties(client.connectionParams);
   requestOptions.method = 'POST';
-  requestOptions.path = mlutil.databaseParam(connectionParams, path, '&');
+  requestOptions.path = path;
 
   var operation = mlrest.createOperation(
       result+' transaction', client, requestOptions, 'empty', 'empty'

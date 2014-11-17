@@ -15,8 +15,6 @@
  */
 var should = require('should');
 
-var fs = require('fs');
-
 var testconfig = require('../etc/test-config.js');
 
 var marklogic = require('../');
@@ -24,12 +22,11 @@ var q = marklogic.queryBuilder;
 
 var db = marklogic.createDatabaseClient(testconfig.restReaderConnection);
 var dbWriter = marklogic.createDatabaseClient(testconfig.restWriterConnection);
-var restAdminDB = marklogic.createDatabaseClient(testconfig.restAdminConnection);
 
 describe('document query', function(){
   before(function(done){
-    this.timeout(5000);
-    // NOTE: must create a string range index on rangeKey1 and rangeKey2
+    this.timeout(3000);
+// NOTE: must create a string range index on rangeKey1 and rangeKey2
     dbWriter.documents.write({
       uri: '/test/query/matchDir/doc1.json',
       collections: ['matchCollection1'],
@@ -37,14 +34,7 @@ describe('document query', function(){
       content: {
         id:       'matchDoc1',
         valueKey: 'match value',
-        wordKey:  'matchWord1 unmatchWord2',
-        a1:{
-          skip:'skippedChild1',
-          a2:{
-            skip:'skippedChild2',
-            extractMatch:'extractedValue'
-            }
-          }
+        wordKey:  'matchWord1 unmatchWord2'
         }
       }, {
         uri: '/test/query/unmatchDir/doc2.json',
@@ -105,18 +95,12 @@ describe('document query', function(){
           rangeKey2: 'bc',
           scoreKey:  'matchList matchList matchList matchList matchList'
           }
-        }).result().
-    then(function(response) {
-      var dbModule = 'extractFirst.xqy';
-      var fsPath   = './test-basic/data/extractFirst.xqy';
-      restAdminDB.config.query.snippet.write(dbModule, fs.createReadStream(fsPath)).
-      result(function(response){
-        done();}, done);
-    });
+        }).
+    result(function(response){done();}, done);
   });
   describe('for a built where clause', function() {
     it('should match a directory query', function(done){
-      db.documents.query(
+      db.query(
         q.where(
           q.directory('/test/query/matchDir/')
           )
@@ -132,7 +116,7 @@ describe('document query', function(){
       }, done);
     });
     it('should match a collection query', function(done){
-      db.documents.query(
+      db.query(
         q.where(
           q.collection('matchCollection1')
           )
@@ -148,7 +132,7 @@ describe('document query', function(){
       }, done);
     });
     it('should match a value query', function(done){
-      db.documents.query(
+      db.query(
         q.where(
           q.value('valueKey', 'match value')
           )
@@ -164,7 +148,7 @@ describe('document query', function(){
       }, done);
     });
     it('should match a word query', function(done){
-      db.documents.query(
+      db.query(
         q.where(
           q.word('wordKey', 'matchWord1')
           )
@@ -180,7 +164,7 @@ describe('document query', function(){
       }, done);
     });
     it('should support an empty result set', function(done){
-      db.documents.query(
+      db.query(
           q.where(
             q.word('wordKey', 'ThisCriteriaShouldNeverMatch')
             )
@@ -191,7 +175,7 @@ describe('document query', function(){
         }, done);
     });
     it('should calculate key1 and key2 facets without results', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.collection('matchList')
           ).
@@ -212,7 +196,7 @@ describe('document query', function(){
       }, done);
     });
     it('should calculate key1 and key2 facets with ordered results', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.collection('matchList')
           ).
@@ -245,7 +229,7 @@ describe('document query', function(){
       }, done);
     });
     it('should order by key1 and key2', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.collection('matchList')
           ).
@@ -265,7 +249,7 @@ describe('document query', function(){
       }, done);
     });
     it('should order by key2 and key1 descending', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.collection('matchList')
           ).
@@ -285,7 +269,7 @@ describe('document query', function(){
       }, done);
     });
     it('should order by key1 and score', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.or(
                 q.collection('matchList'),
@@ -308,7 +292,7 @@ describe('document query', function(){
       }, done);
     });
     it('should take a slice from the middle', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.word('scoreKey', 'matchList')
           ).
@@ -327,7 +311,7 @@ describe('document query', function(){
       }, done);
     });
     it('should take a slice from the end', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.word('scoreKey', 'matchList')
           ).
@@ -345,44 +329,8 @@ describe('document query', function(){
         done();
       }, done);
     });
-    it('should take a slice with extract', function(done){
-      db.documents.query(
-        q.where(
-            q.word('wordKey', 'matchWord1')
-          ).
-        slice(1, 1, q.extract({
-          selected:'include-with-ancestors',
-          paths:'/node("a1")/node("a2")/node("extractMatch")'
-          }))
-        ).
-      result(function(response) {
-        response.length.should.equal(1);
-        var document = response[0];
-        document.should.have.property('content');
-        document.content.should.have.property('a1');
-        document.content.a1.should.have.property('a2');
-        document.content.a1.should.not.have.property('skippedChild1');
-        document.content.a1.a2.should.have.property('extractMatch');
-        document.content.a1.a2.should.not.have.property('skippedChild2');
-        done();
-      }, done);
-    });
-    it('should take a slice with a snippet', function(done){
-      db.documents.query(
-        q.where(
-            q.word('wordKey', 'matchWord1')
-          ).
-        slice(1, 1, q.snippet('extractFirst'))
-        ).
-      result(function(response) {
-        response.length.should.equal(2);
-        response[0].results.length.should.equal(1);
-        response[0].results[0].snippet.should.have.property('first');
-        done();
-      }, done);
-    });
     it('should get the query plan and permissions', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.collection('matchList')
           ).
@@ -411,7 +359,7 @@ describe('document query', function(){
   });
   describe('for a where clause with a parsed query', function() {
     it('should match a value query', function(done){
-      db.documents.query(
+      db.query(
         q.where(
           q.parsedFrom('matchConstraint:matchWord1',
             q.parseBindings(
@@ -430,7 +378,7 @@ describe('document query', function(){
       }, done);
     });
     it('should match an empty query', function(done){
-      db.documents.query(
+      db.query(
         q.where(
           q.parsedFrom('',
             q.parseBindings(
@@ -446,7 +394,7 @@ describe('document query', function(){
   });
   describe('for a QBE where clause', function() {
     it('should match a value query', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.byExample({
               valueKey: 'match value'
@@ -464,7 +412,7 @@ describe('document query', function(){
       }, done);
     });
     it('should match a word query', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.byExample({
               wordKey: {$word:'matchWord1'}
@@ -482,7 +430,7 @@ describe('document query', function(){
       }, done);
     });
     it('should work with calculate and orderBy clauses', function(done){
-      db.documents.query(
+      db.query(
         q.where(
             q.byExample({$or:[
               {rangeKey1: {$eq:'aa'}},
@@ -521,7 +469,7 @@ describe('document query', function(){
   });
   describe('for a structured query', function() {
     it('should work with a simple structured search', function(done) {
-      db.documents.query({
+      db.query({
         search: {
           query: {
             queries: [
@@ -540,7 +488,7 @@ describe('document query', function(){
       }, done);
     });
     it('should work with combined search', function(done){
-      db.documents.query({
+      db.query({
         search: {
           query: {
             queries: [

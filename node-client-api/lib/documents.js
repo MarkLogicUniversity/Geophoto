@@ -20,17 +20,14 @@ var mlutil   = require('./mlutil.js');
 
 /** @ignore */
 function addDocumentUri(documents, document) {
-  if (!valcheck.isNullOrUndefined(document)) {
-    var uri = document.uri;
-    if (valcheck.isString(uri) && uri.length > 0) {
-      documents.push(uri);
-    }
+  if (document !== undefined) {
+    documents.push(document.uri);
   }
   return documents;
 }
 /** @ignore */
 function getDocumentUris(documents) {
-  if (!valcheck.isArray(documents) || documents.length === 0) {
+  if (documents === undefined || documents.length === 0) {
     return [];
   }
   return documents.reduce(addDocumentUri, []);
@@ -63,14 +60,11 @@ function uriListErrorTransform(message) {
  */
 
 /** @ignore */
-function probeOutputTransform(headers) {
+function checkOutputTransform(data) {
   var operation = this;
 
   var statusCode = operation.responseStatusCode;
   var exists     = (statusCode === 200) ? true : false;
-  if (operation.contentOnly === true) {
-    return exists;
-  }
 
   var output = exists ? operation.responseHeaders : {};
   output.uri    = operation.uri;
@@ -147,47 +141,42 @@ function probeOutputTransform(headers) {
  * a {@link documents#probeResult} success callback.
  */
 function probeDocument() {
-  return probeDocumentsImpl.call(this, false, mlutil.asArray.apply(null, arguments));
-}
-function probeDocumentsImpl(contentOnly, args) {
-  if (args.length !== 1) {
+  if (arguments.length != 1) {
     throw new Error('must supply uri for document check()');
   }
 
-  var params = (!valcheck.isString(args[0])) ? args[0] : null; 
+  var params = (!valcheck.isString(arguments[0])) ? arguments[0] : null; 
 
   var uri;
 
   var path = '/v1/documents?format=json';
   if (params === null) {
-    uri = args[0];
+    uri = arguments[0];
     path += '&uri='+encodeURIComponent(uri);
   } else {
     uri = params.uri;
-    if (valcheck.isNullOrUndefined(uri)) {
+    if (uri === undefined) {
       throw new Error('must specify the uri parameter for the document to check');
     }
-    path += '&uri='+encodeURIComponent(uri);
-
     var txid = params.txid;
-    if (!valcheck.isNullOrUndefined(txid)) {
-      path += '&txid='+txid;
+    if (txid !== undefined) {
+      path += '&uri='+encodeURIComponent(uri)+'&txid='+txid;
+    } else {
+      path += '&uri='+encodeURIComponent(uri);
     }
   }
 
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'HEAD';
-  requestOptions.path = mlutil.databaseParam(connectionParams, path, '&');
+  requestOptions.path = path ;
 
   var operation = mlrest.createOperation(
-      'probe document', this.client, requestOptions, 'empty', 'empty'
+      'check document', this.client, requestOptions, 'empty', 'empty'
       );
   operation.uri              = uri;
   operation.validStatusCodes = [200, 404];
-  operation.outputTransform  = probeOutputTransform;
+  operation.outputTransform  = checkOutputTransform;
   operation.errorTransform   = uriErrorTransform;
-  operation.contentOnly = (contentOnly === true);
 
   return mlrest.startRequest(operation);
 }
@@ -217,72 +206,120 @@ function probeDocumentsImpl(contentOnly, args) {
  * a {@link documents#resultList} success callback.
  */
 function readDocuments() {
-  return readDocumentsImpl.call(this, false, mlutil.asArray.apply(null, arguments));
-}
-function readDocumentsImpl(contentOnly, args) {
-  if (args.length === 0) {
+  if (arguments.length === 0) {
     throw new Error('must specify at least one document to read');
   }
 
-  var arg = args[0];
-  var uris = arg.uris;
-  var params = valcheck.isNullOrUndefined(uris) ? null : arg;
+  var params = (arguments[0].uris !== undefined) ? arguments[0] : null;
 
-  var categories = null;
-  var txid = null;
-  var transform = null;
+  var uris;
+  var categories;
+  var txid;
+  var transform;
 
+// TODO: set format to JSON only if metadata, set flag to force mapping
   if (params !== null) {
-    if (!valcheck.isArray(uris)) {
-      uris = [uris];
-    }
+    uris = (params.uris instanceof Array) ? params.uris : [params.uris];
     categories = params.categories;
     txid = params.txid;
     transform = params.transform;
-  } else if (valcheck.isArray(arg)) {
-    uris = arg;
-  } else if (args.length === 1) {
+  } else if (arguments[0] instanceof Array) {
+    uris = arguments[0];
+  } else if (arguments.length === 1) {
+    var arg = arguments[0];
     if (valcheck.isString(arg)) {
       uris = [arg];      
     } else {
       throw new Error('must specify the uris parameters with at least one document to read');
     }
   } else {
-    uris = args;
+    uris = mlutil.asArray.apply(null, arguments);
   }
-  if (valcheck.isNullOrUndefined(categories)) {
+  if (categories === undefined) {
     categories = 'content';
   }
 
   var path = '/v1/documents?format=json&uri='+
     uris.map(encodeURIComponent).join('&uri=');
   path += '&category=' + (
-      valcheck.isArray(categories) ? categories.join('&category=') : categories
+      (categories instanceof Array) ? categories.join('&category=') : categories
       );
-  if (!valcheck.isNullOrUndefined(txid)) {
+  if (txid !== undefined) {
     path += '&txid='+params.txid;
   }
-  if (!valcheck.isNullOrUndefined(transform)) {
-    path += '&'+mlutil.endpointTransform(transform);
+  if (transform !== undefined) {
+    path += '&'+endpointTransform(transform);
   }
 
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'GET';
   requestOptions.headers = {
       'Accept': 'multipart/mixed; boundary='+mlrest.multipartBoundary
   };
-  requestOptions.path = mlutil.databaseParam(connectionParams, path, '&');
+  requestOptions.path = path;
 
   var operation = mlrest.createOperation(
       'read documents', this.client, requestOptions, 'empty', 'multipart'
       );
-  operation.uris              = uris;
-  operation.categories        = categories;
-  operation.errorTransform    = uriListErrorTransform;
-  if (contentOnly === true) {
-    operation.subdata = ['content'];
+  operation.uris           = uris;
+  operation.categories     = categories;
+  operation.errorTransform = uriListErrorTransform;
+
+  return mlrest.startRequest(operation);
+}
+
+/**
+ * Reads a large document (typically a binary) in incremental chunks with
+ * a stream; takes a configuration object with the following named
+ * parameters or, as a shortcut, a uri string.
+ * @method documents#createReadStream
+ * @param {string} uri - the uri string or an array of uri strings
+ * for the database documents
+ * @param {string}  [txid] - the transaction id for an open transaction
+ * @param {string}  [transform] - the name of a transform extension to apply
+ * to the document; the transform must have been installed using
+ * the {@link transforms#write} function.
+ * @returns {ReadableStream} a stream for piping the retrieved document or
+ * listening for the data and end events on the retrieved document.
+ */
+function createReadStream() {
+  if (arguments.length === 0) {
+    throw new Error('must specify one document for streaming read');
   }
+
+  var params = (arguments[0].uri !== undefined) ? arguments[0] : null;
+
+  var uri;
+  var txid;
+  var transform;
+  if (params !== null) {
+    uri = params.uri;
+    txid = params.txid;
+    transform = params.transform;
+  } else {
+    uri = arguments[0];
+    if (!valcheck.isString(uri)) {
+      throw new Error('must specify the uri parameter for the document to read');
+    }
+  }
+
+  var path = '/v1/documents?uri='+encodeURIComponent(uri);
+  if (txid !== undefined) {
+    path += '&txid='+params.txid;
+  }
+  if (transform !== undefined) {
+    path += '&'+endpointTransform(transform);
+  }
+
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
+  requestOptions.method = 'GET';
+  requestOptions.path = path;
+
+  var operation = mlrest.createOperation(
+      'read document stream', this.client, requestOptions, 'empty', 'chunked'
+      );
+  operation.uri            = uri;
+  operation.errorTransform = uriErrorTransform;
 
   return mlrest.startRequest(operation);
 }
@@ -322,42 +359,41 @@ function createWriteStream(document) {
   var categories  = document.categories;
   if (!valcheck.isNullOrUndefined(categories)) {
     endpoint += sep+'category='+(
-        valcheck.isArray(categories) ? categories.join('&category=') : categories
+        (categories instanceof Array) ? categories.join('&category=') : categories
         );
-    if (sep !== '&') { sep = '&'; }
+    if (sep !== '&') sep = '&';
   }
   var txid = document.txid;
   if (!valcheck.isNullOrUndefined(txid)) {
     endpoint += sep+'txid='+txid;
-    if (sep !== '&') { sep = '&'; }
+    if (sep !== '&') sep = '&';
   }
-  var transform = mlutil.endpointTransform(document.transform);
+  var transform = endpointTransform(document.transform);
   if (!valcheck.isNullOrUndefined(transform)) {
     endpoint += sep+transform;
-    if (sep !== '&') { sep = '&'; }
+    if (sep !== '&') sep = '&';
   }
   var forestName = document.forestName;
   if (!valcheck.isNullOrUndefined(forestName)) {
     endpoint += sep+'forest-name='+forestName;
-    if (sep !== '&') { sep = '&'; }
+    if (sep !== '&') sep = '&';
   }
 
   var multipartBoundary = mlrest.multipartBoundary;
 
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'POST';
   requestOptions.headers = {
       'Content-Type': 'multipart/mixed; boundary='+multipartBoundary+'1',
       'Accept': 'application/json'
   };
-  requestOptions.path = mlutil.databaseParam(connectionParams, endpoint, sep);
+  requestOptions.path = endpoint;
 
   var requestPartList = [];
-  addDocumentParts(requestPartList, document, true);
+  addDocumentParts.call(requestPartList, document, true);
 
   var operation = mlrest.createOperation(
-      'write document stream', this.client, requestOptions, 'chunkedMultipart', 'single'
+      'write document stream', this.client, requestOptions, 'chunked', 'single'
       );
   operation.uri               = document.uri;
   operation.requestDocument   = requestPartList;
@@ -394,24 +430,22 @@ function createWriteStream(document) {
  * a {@link documents#writeResult} success callback.
  */
 function writeDocuments() {
-  return writeDocumentsImpl.call(this, false, mlutil.asArray.apply(null, arguments));
-}
-function writeDocumentsImpl(contentOnly, args) {
-  if (args.length < 1) {
+  if (arguments.length < 1) {
     throw new Error('must provide uris for document write()');
   }
 
-  var arg = args[0];
-  var documents = arg.documents;
-  var params = valcheck.isNullOrUndefined(documents) ? null : arg;
+  var params = (arguments[0].documents !== undefined) ? arguments[0] : null;
+  
+  var documents = null;
   if (params !== null) {
-    if (!valcheck.isArray(documents)) {
-      documents = [documents];
-    }
-  } else if (valcheck.isArray(arg)) {
-    documents = arg;
+    documents = (params.documents instanceof Array) ? params.documents :
+      [params.documents];
+  } else if (arguments[0] instanceof Array) {
+    documents = arguments[0];
+  } else if (arguments.length === 1) {
+    documents = [arguments[0]];
   } else {
-    documents = args;
+    documents = mlutil.asArray.apply(null, arguments);
   }
 
   var requestParams  =
@@ -420,57 +454,44 @@ function writeDocumentsImpl(contentOnly, args) {
     null;
 
   var endpoint = '/v1/documents';
-  var sep = '?';
   if (requestParams !== null) {
+    var sep = '?';
     var category = requestParams.category;
     if (!valcheck.isNullOrUndefined(category)) {
       endpoint += sep+'category='+(
-          valcheck.isArray(category) ? category.join('&category=') : category
+          (category instanceof Array) ? category.join('&category=') : category
           );
-      if (sep !== '&') { sep = '&'; }
+      if (sep !== '&') sep = '&';
     }
     var txid = requestParams.txid;
     if (!valcheck.isNullOrUndefined(txid)) {
       endpoint += sep+'txid='+txid;
-      if (sep !== '&') { sep = '&'; }
+      if (sep !== '&') sep = '&';
     }
-    var transform = mlutil.endpointTransform(requestParams.transform);
+    var transform = endpointTransform(requestParams.transform);
     if (!valcheck.isNullOrUndefined(transform)) {
       endpoint += sep+transform;
-      if (sep !== '&') { sep = '&'; }
+      if (sep !== '&') sep = '&';
     }
     var forestName = requestParams.forestName;
     if (!valcheck.isNullOrUndefined(forestName)) {
       endpoint += sep+'forest-name='+forestName;
-      if (sep !== '&') { sep = '&'; }
-    }
-    var temporalCollection = requestParams.temporalCollection;
-    if (!valcheck.isNullOrUndefined(temporalCollection)) {
-      endpoint += sep+'temporal-collection='+temporalCollection;
-      if (sep !== '&') { sep = '&'; }
-    }
-    var systemTime = requestParams.systemTime;
-    if (!valcheck.isNullOrUndefined(systemTime)) {
-      endpoint += sep+'system-time='+systemTime;
-      if (sep !== '&') { sep = '&'; }
+      if (sep !== '&') sep = '&';
     }
   }
 
   var multipartBoundary = mlrest.multipartBoundary;
 
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'POST';
   requestOptions.headers = {
       'Content-Type': 'multipart/mixed; boundary='+multipartBoundary+'1',
       'Accept':       'application/json'
   };
-  requestOptions.path = mlutil.databaseParam(connectionParams, endpoint, sep);
+  requestOptions.path = endpoint;
 
   var requestPartList = [];
-  for (var i=0; i < documents.length; i++) {
-    addDocumentParts(requestPartList, documents[i], false);
-  }
+  documents.forEach(mlutil.callbackOn(requestPartList, addDocumentParts));
 
   var operation = mlrest.createOperation(
       'write documents', this.client, requestOptions, 'multipart', 'single'
@@ -479,13 +500,12 @@ function writeDocumentsImpl(contentOnly, args) {
   operation.uris              = getDocumentUris(documents);
   operation.requestPartList   = requestPartList;
   operation.errorTransform    = uriListErrorTransform;
-  if (contentOnly === true) {
-    operation.subdata = ['documents', 'uri'];
-  }
 
   return mlrest.startRequest(operation);
 }
-function addDocumentParts(partList, document, isContentOptional) {
+function addDocumentParts(document, isContentOptional) {
+  var partList = this;
+
   var uri    = document.uri;
   var hasUri = !valcheck.isNullOrUndefined(uri);
   
@@ -524,9 +544,8 @@ function addDocumentParts(partList, document, isContentOptional) {
       disposition += '; versionId='+versionId;
     }
 
-    var headers = {};
-    var part    = {
-        headers: headers
+    var part = {
+        headers:{}
         };
 
     var contentType    = document.contentType;
@@ -535,13 +554,13 @@ function addDocumentParts(partList, document, isContentOptional) {
     var hasFormat      = !valcheck.isNullOrUndefined(format);
 
     if (hasContentType) {
-      headers['Content-Type'] = contentType +
+      part.headers['Content-Type'] = contentType +
         (valcheck.isString(marshaledData) ? '; encoding=utf-8' : '');
       if (!hasFormat) {
         format = contentType.replace(/^(application|text)\/([^+]+\+)?(json|xml)/, '$3');
         hasFormat = !valcheck.isNullOrUndefined(format);
         if (!hasFormat) {
-          hasFormat = /^(text)\//.test(contentType);
+          hasFormat = contentType.match(/^(text)\//);
           if (hasFormat) {
             format = 'text';
             isString = true;
@@ -569,13 +588,13 @@ function addDocumentParts(partList, document, isContentOptional) {
           disposition += '; lang='+lang;
         }
         if (!hasContentType) {
-          headers['Content-Type'] = 'application/json' +
+          part.headers['Content-Type'] = 'application/json' +
           (valcheck.isString(marshaledData) ? '; encoding=utf-8' : '');
         }
         break;
       case 'text':
         if (!hasContentType) {
-          headers['Content-Type'] = 'text/plain' +
+          part.headers['Content-Type'] = 'text/plain' +
           (valcheck.isString(marshaledData) ? '; encoding=utf-8' : '');
         }
         break;
@@ -593,20 +612,44 @@ function addDocumentParts(partList, document, isContentOptional) {
           }
         }
         if (!hasContentType) {
-          headers['Content-Type'] = 'application/xml' +
+          part.headers['Content-Type'] = 'application/xml' +
           (valcheck.isString(marshaledData) ? '; encoding=utf-8' : '');
         }
         break;
       }
     }
 
-    headers['Content-Disposition'] = disposition+'; category=content';
+    part.headers['Content-Disposition'] = disposition+'; category=content';
 
     if (hasContent) {
       part.content = marshaledData;
     }
 
     partList.push(part);
+  }
+}
+
+function endpointTransform(transform) {
+  if (transform !== undefined) {
+    if (transform instanceof Array) {
+      switch(transform.length) {
+      case 0:
+        break;
+      case 1:
+        return 'transform='+transform[0];
+      default:
+        var endpointParam = 'transform='+transform[0];
+        var transformParams = transform[1];
+        var transformKeys = Object.keys(transformParams);
+        for (var i=0; i < transformKeys.length; i++) {
+          var transformKey = transformKeys[i];
+          endpointParam += '&trans:'+transformKey+'='+transformParams[transformKey];
+        }
+        return endpointParam;
+      }
+    } else {
+      return 'transform='+transform;
+    }
   }
 }
 
@@ -626,12 +669,8 @@ function collectMetadata(document) {
   return metadata;
 }
 
-function removeOutputTransform(headers, data) {
+function removeOutputTransform(data) {
   var operation = this;
-
-  if (operation.contentOnly === true) {
-    return operation.uri;
-  }
 
   return {
     uri:    operation.uri,
@@ -657,55 +696,40 @@ function removeOutputTransform(headers, data) {
  * a {@link documents#removeResult} success callback.
  */
 function removeDocument() {
-  return removeDocumentImpl.call(this, false, mlutil.asArray.apply(null, arguments));
-}
-function removeDocumentImpl(contentOnly, args) {
-  if (args.length !== 1) {
-    throw new Error('incorrect number of arguments for document remove()');
+  if (arguments.length !== 1) {
+    throw new Error('incorrect number of arguments for document del()');
   }
 
-  var arg = args[0];
-  var params = valcheck.isString(arg) ? null : arg;
+  var params = (!valcheck.isString(arguments[0])) ? arguments[0] : null;
 
-  var uri = null;
-  var txid = null;
-  var temporalCollection = null;
-  var systemTime = null;
-  var versionId = null;
+  var uri;
+  var txid;
+  var versionId;
 
   if (params === null) {
-    uri = arg;
+    uri = arguments[0];
   } else {
     uri = params.uri;
-    if (valcheck.isNullOrUndefined(uri)) {
+    if (uri === undefined) {
       throw new Error('must specify the uri parameter for the document to remove');
     }
     txid = params.txid;
-    temporalCollection = params.temporalCollection;
-    systemTime = params.systemTime;
     versionId = params.versionId;
   }
 
   var path = '/v1/documents?uri='+encodeURIComponent(uri);
-  if (!valcheck.isNullOrUndefined(txid)) {
+  if (txid !== undefined) {
     path += '&txid='+params.txid;
   }
-  if (!valcheck.isNullOrUndefined(temporalCollection)) {
-    path += '&temporal-collection='+temporalCollection;
-  }
-  if (!valcheck.isNullOrUndefined(systemTime)) {
-    path += '&system-time='+systemTime;
-  }
 
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
-  if (!valcheck.isNullOrUndefined(versionId)) {
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
+  if (versionId !== undefined) {
     requestOptions.headers = {
         'If-Match': versionId
     };
   }
   requestOptions.method = 'DELETE';
-  requestOptions.path = mlutil.databaseParam(connectionParams, path, '&');
+  requestOptions.path = path;
 
   var operation = mlrest.createOperation(
       'remove document', this.client, requestOptions, 'empty', 'empty'
@@ -714,25 +738,20 @@ function removeDocumentImpl(contentOnly, args) {
   operation.validStatusCodes = [204];
   operation.outputTransform  = removeOutputTransform;
   operation.errorTransform   = uriErrorTransform;
-  operation.contentOnly      = (contentOnly === true);
 
   return mlrest.startRequest(operation);
 }
 
-function removeAllOutputTransform(headers, data) {
+function removeAllOutputTransform(data) {
   var operation = this;
-
-  if (operation.contentOnly === true) {
-    return operation.collection;
-  }
 
   var output = {
     exists: false
   };
 
-  var collection = operation.collection;
-  if (!valcheck.isNullOrUndefined(collection)) {
-    output.collection = collection;
+  var collections = operation.collections;
+  if (!valcheck.isNullOrUndefined(collections)) {
+    output.collections = collections;
   }
 
   var directory = operation.directory;
@@ -748,13 +767,13 @@ function removeAllOutputTransform(headers, data) {
 }
 
 /**
- * Removes all documents in a collection, directory, or database; 
- * takes a configuration object with the following named 
+ * Removes all documents in a list of collections, directory, or
+ * database; takes a configuration object with the following named 
  * parameters or no parameters to delete all documents. The user must
  * have the rest-admin role to to delete all documents and the rest-writer
  * role otherwise.
  * @method documents#removeAll
- * @param {string}  [collection] - the collection whose documents should be
+ * @param {string[]}  [collections] - the collections whose documents should be
  * deleted
  * @param {string}  [directory] - a directory whose documents should be
  * deleted
@@ -762,32 +781,33 @@ function removeAllOutputTransform(headers, data) {
  * success and failure callbacks.
  */
 function removeAllDocuments(params) {
-  return removeAllDocumentsImpl.call(this, false, params);
-}
-function removeAllDocumentsImpl(contentOnly, params) {
   if (valcheck.isNullOrUndefined(params)) {
-    throw new Error('No parameters specifying directory or collection to delete');
+    throw new Error('No directory or collections to delete');
   }
 
-  var deleteAll     = (params.all === true);
+  var deleteAll      = (params.all === true);
 
-  var collection    = params.collection;
-  var hasCollection = !valcheck.isNullOrUndefined(collection);
+  var collections    = params.collections;
+  var hasCollections = !valcheck.isNullOrUndefined(collections);
 
-  var directory     = params.directory;
-  var hasDirectory  = !valcheck.isNullOrUndefined(directory);
+  var directory      = params.directory;
+  var hasDirectory   = !valcheck.isNullOrUndefined(directory);
 
   var txid = params.txid;
 
   var endpoint = '/v1/search';
   var sep = '?';
 
-  if (hasCollection || hasDirectory) {
+  if (hasCollections || hasDirectory) {
     if (deleteAll) {
-      throw new Error('delete all conflicts with delete collection and directory');
+      throw new Error('delete all conflicts with delete collections and directory');
     }
-    if (hasCollection) {
-      endpoint += sep+'collection='+encodeURIComponent(collection);
+    if (hasCollections) {
+      endpoint += sep+'collection='+(
+          (collections instanceof Array) ?
+          collections.map(encodeURIComponent).join('&collection=') :
+          encodeURIComponent(collections)
+          );
       sep = '&';
     }
     if (hasDirectory) {
@@ -799,26 +819,22 @@ function removeAllDocumentsImpl(contentOnly, params) {
       }
     }
   } else if (!deleteAll) {
-    throw new Error('No directory or collection to delete');
+    throw new Error('No directory or collections to delete');
   }
 
   if (!valcheck.isNullOrUndefined(txid)) {
     endpoint += sep+'txid='+txid;
-    if (sep === '?') {
-      sep = '&';
-    }
   }
 
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'DELETE';
-  requestOptions.path = mlutil.databaseParam(connectionParams, endpoint, sep);
+  requestOptions.path = endpoint;
 
   var operation = mlrest.createOperation(
       'remove all documents', this.client, requestOptions, 'empty', 'empty'
       );
-  if (hasCollection) {
-    operation.collection = collection;
+  if (hasCollections) {
+    operation.collections = collections;
   }
   if (hasDirectory) {
     operation.directory = directory;
@@ -827,7 +843,6 @@ function removeAllDocumentsImpl(contentOnly, params) {
     operation.all = true;
   }
   operation.outputTransform  = removeAllOutputTransform;
-  operation.contentOnly      = (contentOnly === true);
 
   return mlrest.startRequest(operation);
 }
@@ -864,11 +879,8 @@ function removeAllDocumentsImpl(contentOnly, params) {
  * a {@link documents#resultList} success callback.
  */
 function queryDocuments(builtQuery) {
-  return queryDocumentsImpl.call(this, null, false, builtQuery);
-}
-function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
-  if (valcheck.isNullOrUndefined(builtQuery)) {
-    throw new Error('no query for documents');
+  if (arguments.length !== 1) {
+    throw new Error('incorrect number of arguments for document query()');
   }
 
   var categories  = null;
@@ -876,7 +888,6 @@ function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
   var pageStart   = null;
   var pageLength  = null;
   var txid        = null;
-  var transform   = null;
   var view        = null;
 
   var searchBody = {};
@@ -895,9 +906,6 @@ function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
     if (!valcheck.isUndefined(builtQuery.txid)) {
       txid = builtQuery.txid;
     }
-    if (!valcheck.isUndefined(builtQuery.transform)) {
-      transform = builtQuery.transform;
-    }
     if (!valcheck.isUndefined(builtQuery.view)) {
       view = builtQuery.view;
     } else if (!valcheck.isUndefined(builtQuery.search) &&
@@ -908,65 +916,73 @@ function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
     categories = (!valcheck.isUndefined(builtQuery.categories)) ?
         builtQuery.categories : ['content', 'collections'];
   } else {
-    var search = {};
-    searchBody.search = search;
-
-    var searchOptions = null;
+    searchBody.search = {};
 
     // TODO: validate clauses
 
     var whereClause = builtQuery.whereClause;
-    if (!valcheck.isNullOrUndefined(whereClause)) {
-      var query          = whereClause.query;
-      var hasQuery       = !valcheck.isNullOrUndefined(query);
-      var parsedQuery    = whereClause.parsedQuery;
-      var hasParsedQuery = !valcheck.isNullOrUndefined(parsedQuery);
-      var fragmentScope  = whereClause['fragment-scope'];
-      if (!hasQuery && !hasParsedQuery) {
+    if (whereClause !== undefined) {
+      var query         = whereClause.query;
+      var parsedQuery   = whereClause.parsedQuery;
+      var fragmentScope = whereClause['fragment-scope'];
+      if (query === undefined && parsedQuery === undefined) {
         query = whereClause.$query;
-        if (!valcheck.isNullOrUndefined(query)) {
-          search.$query = query;
+        if (query !== undefined) {
+          searchBody.search.$query = query;
         }
       } else {
-        if (hasQuery) {
-          search.query = query;     
+        if (query !== undefined) {
+          searchBody.search.query = query;     
         }
-        if (hasParsedQuery) {
-          makeParsedQuery(searchBody, parsedQuery);
+        if (parsedQuery !== undefined) {
+          searchBody.search.qtext = parsedQuery.qtext;
+          var constraintBindings = parsedQuery.constraint;
+          var hasConstraints     = (constraintBindings !== undefined);
+          var termBinding        = parsedQuery.term;
+          var hasTerm            = (termBinding !== undefined);
+          if (hasConstraints || hasTerm) {
+            var parsedOptions = {};
+            if (hasConstraints) {
+              parsedOptions.constraint = constraintBindings;
+            }
+            if (hasTerm) {
+              parsedOptions.term = termBinding;
+            }
+            searchBody.search.options = parsedOptions;
+          }
         }
       }
 
-      if (!valcheck.isNullOrUndefined(fragmentScope)) {
-        searchOptions = search.options;
-        if (valcheck.isNullOrUndefined(searchOptions)) {
-          searchOptions = {};
-          search.options = searchOptions;
+      if (fragmentScope !== undefined) {
+        if (searchBody.search.options === undefined) {
+          searchBody.search.options = {
+              'fragment-scope': fragmentScope
+          };
+        } else {
+          searchBody.search.options['fragment-scope'] = fragmentScope;
         }
-        searchOptions['fragment-scope'] = fragmentScope;
       }
     }
 
     var calculateClause = builtQuery.calculateClause;
-    if (!valcheck.isNullOrUndefined(calculateClause)) {
-      searchOptions = search.options;
-      if (valcheck.isNullOrUndefined(searchOptions)) {
-        searchOptions = {};
-        search.options = searchOptions;
+    if (calculateClause !== undefined) {
+      if (searchBody.search.options === undefined) {
+        searchBody.search.options = {};
       }
       view = 'results';
-      searchOptions['return-facets']     = true;
-      searchOptions['return-results']    = false;
-      searchOptions['return-metrics']    = false;
-      searchOptions['return-qtext']      = false;
-      searchOptions['transform-results'] = {apply: 'empty-snippet'};
-      var searchConstraintList = searchOptions.constraint;
-      if (valcheck.isNullOrUndefined(searchConstraintList)) {
-        searchOptions.constraint = calculateClause.constraint;      
+      searchBody.search.options['return-facets']     = true;
+      searchBody.search.options['return-results']    = false;
+      searchBody.search.options['return-metrics']    = false;
+      searchBody.search.options['return-qtext']      = false;
+      searchBody.search.options['transform-results'] = {apply: 'empty-snippet'};
+      if (searchBody.search.options.constraint === undefined) {
+        searchBody.search.options.constraint = calculateClause.constraint;      
       } else {
         // TODO: convert into a generic deep merge utility
         var constraintLookup = {};
-        for (var li=0; li < searchConstraintList.length; li++) {
-          var lookupConstraint = searchConstraintList[li];
+        var searchConstraints = searchBody.search.options.constraint;
+        for (var li=0; li < searchConstraints.length; li++) {
+          var lookupConstraint = searchConstraints[li];
           constraintLookup[lookupConstraint.name] = lookupConstraint;
         }
 
@@ -974,8 +990,8 @@ function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
         for (var mi=0; mi < calculateConstraints.length; mi++) {
           var calculateConstraint = calculateConstraints[mi];
           var searchConstraint = constraintLookup[calculateConstraint.name];
-          if (valcheck.isNullOrUndefined(searchConstraint)) {
-            searchConstraintList.push(calculateConstraint);
+          if (searchConstraint === undefined) {
+            searchConstraints.push(calculateConstraint);
           } else {
             var constraintChildKeys =
               Object.keys(calculateConstraint).filter(notNameFilter);
@@ -994,59 +1010,36 @@ function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
           }
         }
       }
+      // TODO: values
     }
 
     var orderByClause = builtQuery.orderByClause;
-    if (!valcheck.isNullOrUndefined(orderByClause)) {
-      if (valcheck.isNullOrUndefined(searchOptions)) {
-        searchOptions = {};
-        search.options = searchOptions;
+    if (orderByClause !== undefined) {
+      if (searchBody.search.options === undefined) {
+        searchBody.search.options = {};
       }
       // TODO: fixup on score by treating value as option and setting to null
-      searchOptions['sort-order'] = orderByClause['sort-order'];
+      searchBody.search.options['sort-order'] = orderByClause['sort-order'];
     }
 
     var sliceClause = builtQuery.sliceClause;
-    if (!valcheck.isNullOrUndefined(sliceClause)) {
+    if (sliceClause !== undefined) {
       var sliceStart = sliceClause['page-start'];
-      if (!valcheck.isNullOrUndefined(sliceStart)) {
+      if (sliceStart !== undefined) {
         pageStart = sliceStart;
       }
       var sliceLength = sliceClause['page-length'];
-      if (!valcheck.isNullOrUndefined(sliceLength)) {
+      if (sliceLength !== undefined) {
         pageLength = sliceLength;
       }
-
-      var transformResults = sliceClause['transform-results'];
-      if (view === null && !valcheck.isNullOrUndefined(transformResults)) {
-        if (valcheck.isNullOrUndefined(searchOptions)) {
-          searchOptions = {};
-          search.options = searchOptions;
-        }
-        searchOptions['transform-results'] = transformResults;
-        searchOptions['return-results']    = true;
-        view = 'results';
-      }
-
-      var extractResults = sliceClause['extract-document-data'];
-      if (view === null && !valcheck.isNullOrUndefined(extractResults)) {
-        if (valcheck.isNullOrUndefined(searchOptions)) {
-          searchOptions = {};
-          search.options = searchOptions;
-        }
-        searchOptions['extract-document-data'] = extractResults;
-      }
-
-      transform = sliceClause['document-transform'];
     }
 
     categories = (pageLength > 0) ? ['content', 'collections'] : null;
 
     var withOptionsClause = builtQuery.withOptionsClause;
-    if (!valcheck.isNullOrUndefined(withOptionsClause)) {
-      if (valcheck.isNullOrUndefined(searchOptions)) {
-        searchOptions = {};
-        search.options = searchOptions;
+    if (withOptionsClause !== undefined) {
+      if (searchBody.search.options === undefined) {
+        searchBody.search.options = {};
       }
 
       // TODO: share with queryBuilder.js
@@ -1062,9 +1055,9 @@ function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
       for (var i=0; i < optionsKeys.length; i++) {
         var key     = optionsKeys[i];
         var mapping = optionKeyMapping[key];
-        if (!valcheck.isNullOrUndefined(mapping)) {
+        if (mapping !== undefined) {
           var value = withOptionsClause[key];
-          if (!valcheck.isNullOrUndefined(value)) {
+          if (value !== undefined) {
             if (mapping === true) {
               switch(key) {
               case 'categories':
@@ -1080,7 +1073,7 @@ function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
               if (view === null) {
                 view = 'results';
               }
-              searchOptions[mapping] = value;
+              searchBody.search.options[mapping] = value;
             }
           }
         }
@@ -1113,18 +1106,11 @@ function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
   if (txid !== null) {
     endpoint += '&txid='+txid;
   }
-  if (!valcheck.isNullOrUndefined(transform)) {
-    endpoint += '&'+mlutil.endpointTransform(transform);
-  }
   if (view) {
     endpoint += '&view='+view;
   }
-  if (!valcheck.isNullOrUndefined(collectionParam)) {
-    endpoint += '&collection='+encodeURIComponent(collectionParam);
-  }
 
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'POST';
   requestOptions.headers = {
       'Content-Type': 'application/json',
@@ -1132,7 +1118,7 @@ function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
           'application/json' :
           'multipart/mixed; boundary='+mlrest.multipartBoundary)
   };
-  requestOptions.path = mlutil.databaseParam(connectionParams, endpoint, '&');
+  requestOptions.path = endpoint;
 
   var operation = mlrest.createOperation(
       'query documents', this.client, requestOptions, 'single',
@@ -1140,31 +1126,9 @@ function queryDocumentsImpl(collectionParam, contentOnly, builtQuery) {
       );
   operation.validStatusCodes = [200, 204, 404];
   operation.requestBody      = searchBody;
-  if (contentOnly === true) {
-    operation.subdata = ['content'];
-  }
 
   return mlrest.startRequest(operation);
 }
-
-function makeParsedQuery(searchBody, parsedQuery) {
-  searchBody.search.qtext = parsedQuery.qtext;
-  var constraintBindings = parsedQuery.constraint;
-  var hasConstraints     = !valcheck.isNullOrUndefined(constraintBindings);
-  var termBinding        = parsedQuery.term;
-  var hasTerm            = !valcheck.isNullOrUndefined(termBinding);
-  if (hasConstraints || hasTerm) {
-    var parsedOptions = {};
-    if (hasConstraints) {
-      parsedOptions.constraint = constraintBindings;
-    }
-    if (hasTerm) {
-      parsedOptions.term = termBinding;
-    }
-    searchBody.search.options = parsedOptions;
-  }
-}
-
 function notNameFilter(key) {
   switch(key) {
   case 'name': return false;
@@ -1172,7 +1136,7 @@ function notNameFilter(key) {
   }
 }
 
-function patchOutputTransform(headers, data) {
+function patchOutputTransform(data) {
   var operation = this;
 
   return {
@@ -1208,82 +1172,48 @@ function patchOutputTransform(headers, data) {
 function patchDocuments() {
   var argLen = arguments.length;
 
-  var arg = arguments[0];
+  var params = (argLen === 1 && arguments[0].uri !== undefined) ?
+      arguments[0] : null;
 
-  var params = (argLen === 1) ? arg : null;
+  var uri = (params !== null) ? params.uri  : (argLen > 1) ? arguments[0] : null;
 
-  // TODO: allow for raw JSON or XML patch
-
-  var uri                = null;
   var documentOperations = null;
-  var categories         = null;
-  var txid               = null;
-  var versionId          = null;
-  var pathlang           = null;
-  var format             = null;
-  var isRawPatch         = false;
   if (params !== null) {
-    uri        = params.uri;
-    arg        = params.operations;
-    if (!valcheck.isNullOrUndefined(arg)) {
-      if (valcheck.isString(arg) || valcheck.isBuffer(arg) ||
-          !valcheck.isNullOrUndefined(arg.patch)) {
-        documentOperations = arg;
-        isRawPatch = true;
-      } else if (valcheck.isArray(arg)) {
-        documentOperations = arg;
-      } else {
-        documentOperations = [arg];
-      }
-    }
-    categories = params.categories;
-    txid       = params.txid;
-    versionId  = params.versionId;
-    format     = params.format;
+    documentOperations = valcheck.isArray(params.operations) ?
+      params.operations : [params.operations];
   } else if (argLen > 1) {
-    uri = arg;
-    arg = arguments[1];
-    if (valcheck.isString(arg) || valcheck.isBuffer(arg) ||
-        !valcheck.isNullOrUndefined(arg.patch)) {
-      documentOperations = arg;
-      isRawPatch = true;
-    } else if (valcheck.isArray(arg)) {
-      documentOperations = arg;
+    if (valcheck.isArray(arguments[1])) {
+      documentOperations = arguments[1];
     } else {
       documentOperations = new Array(argLen - 1);
-      documentOperations[0] = arg;
-      for(var i=2; i < argLen; ++i) {
+      for(var i=1; i < argLen; ++i) {
         documentOperations[i - 1] = arguments[i];
       }
     }
   }
 
-  if (valcheck.isNullOrUndefined(uri) || valcheck.isNullOrUndefined(documentOperations)) {
-    throw new Error('patch must specify a uri and operations');
+  if (uri === null || documentOperations === null || documentOperations.length === 0) {
+    throw new Error('patch requires a uri and operations');
   }
 
-  if (valcheck.isNullOrUndefined(format)) {
-    format = /\.xml$/.test(uri) ? 'xml' : 'json';
-  }
-
-  if (!isRawPatch) {
-    documentOperations = documentOperations.filter(function(operation){
-      if (valcheck.isNullOrUndefined(pathlang)) {
-        pathlang = operation.pathlang;
-        if (!valcheck.isNullOrUndefined(pathlang)) {
-          return false;
-        }
+  var pathlang = null;
+  documentOperations = documentOperations.filter(function(arg){
+    if (valcheck.isNullOrUndefined(pathlang)) {
+      pathlang = arg.pathlang;
+      if (!valcheck.isNullOrUndefined(pathlang)) {
+        return false;
       }
-      return true;
-    });
-    if (documentOperations.length === 0) {
-      throw new Error('patch must specify operations');
     }
-  }
+    return true;
+  });
 
-  var endpoint = '/v1/documents?uri='+encodeURIComponent(uri);
+  var categories = (params !== null) ? params.categories : null;
+  var txid       = (params !== null) ? params.txid       : null;
+  var versionId  = (params !== null) ? params.versionId  : null;
+
+  var endpoint = '/v1/documents?format=json&uri='+encodeURIComponent(uri);
   if (!valcheck.isNullOrUndefined(categories)) {
-    if (!valcheck.isArray(categories)) {
+    if (!(categories instanceof Array)) {
       endpoint += '&category=' + categories;
     } else if (categories.length > 0) {
       endpoint += '&category=' + categories.join('&category=');
@@ -1293,24 +1223,22 @@ function patchDocuments() {
     endpoint += '&txid=' + txid;
   }
 
-  var patchBody = isRawPatch ? documentOperations : {patch: documentOperations};
-  if (!isRawPatch && !valcheck.isNullOrUndefined(pathlang)) {
+  var patchBody = {patch: documentOperations};
+  if (!valcheck.isNullOrUndefined(pathlang)) {
     patchBody.pathlang = pathlang;
   }
 
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
+  var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'POST';
   requestOptions.headers = {
-      'Content-Type':
-        ((format === 'xml') ? 'application/xml' : 'application/json'),
+      'Content-Type':           'application/json',
       'Accept':                 'application/json',
       'X-HTTP-Method-Override': 'PATCH'
   };
   if (!valcheck.isNullOrUndefined(versionId)) {
     requestOptions.headers['If-Match'] = versionId;
   }
-  requestOptions.path = mlutil.databaseParam(connectionParams, endpoint, '&');
+  requestOptions.path = endpoint;
 
   var operation = mlrest.createOperation(
       'patch document', this.client, requestOptions, 'single', 'single'
@@ -1323,171 +1251,17 @@ function patchDocuments() {
   return mlrest.startRequest(operation);
 }
 
-function suggestDocuments() {
-  var argLen = arguments.length;
-  if (argLen < 1) {
-    throw new Error('must supply input and bindings for document suggestion');
-  }
-
-  var input    = null;
-  var bindings = null;
-  var limit    = null;
-  var queries  = null;
-  var facets   = null;
-  if (argLen === 1) {
-    var params = arguments[0];
-    input    = params.input;
-    bindings = params.bindings;
-    limit    = params.limit;
-    queries  = params.queries;
-    facets   = params.facets;
-  } else {
-    input    = arguments[0];
-    bindings = arguments[1];
-  }
-  if (valcheck.isNullOrUndefined(input)) {
-    throw new Error('no input for document suggestion');
-  }
-  if (valcheck.isNullOrUndefined(bindings)) {
-    throw new Error('no bindings for document suggestion');
-  }
-
-  var suggestionSource = null;
-  var defaultSuggestionSource = null;
-
-  var bindingKeys = Object.keys(bindings);
-  var key = null;
-  var i = null;
-  for (i=0; i < bindingKeys.length; i++) {
-    key = bindingKeys[i];
-    switch (key) {
-    case 'term':
-      defaultSuggestionSource = bindings.term['default'];
-      break;
-    case 'constraint':
-      suggestionSource = copyConstraint(suggestionSource, bindings.constraint);
-      break;
-    }
-  }
-
-  if (!valcheck.isNullOrUndefined(facets)) {
-    suggestionSource = copyConstraint(suggestionSource, facets.constraint);
-  }
-
-  var suggestOptions = {};
-  if (!valcheck.isNull(defaultSuggestionSource)) {
-    suggestOptions['default-suggestion-source'] = defaultSuggestionSource;
-  }
-  if (!valcheck.isNull(suggestionSource)) {
-    suggestOptions['suggestion-source'] = suggestionSource;
-  }
-
-  var searchBody = {
-    options: suggestOptions
-  };
-  if (valcheck.isString(queries)) {
-    searchBody.qtext = [queries];
-  } else if (valcheck.isArray(queries)) {
-    searchBody.qtext = queries;
-  }
-
-  var endpoint = '/v1/suggest?partial-q='+input;
-  if (!valcheck.isNullOrUndefined(limit)) {
-    endpoint += '&limit=' + limit;
-  }
-  
-/* TODO:
-suggestion options
-persisted query options
- */
-
-  var connectionParams = this.client.connectionParams;
-  var requestOptions = mlutil.copyProperties(connectionParams);
-  requestOptions.method = 'POST';
-  requestOptions.headers = {
-      'Content-Type':           'application/json',
-      'Accept':                 'application/json',
-  };
-  requestOptions.path = mlutil.databaseParam(connectionParams, endpoint, '&');
-
-  var operation = mlrest.createOperation(
-      'search suggest', this.client, requestOptions, 'single', 'single'
-      );
-  operation.input       = input;
-  operation.requestBody = {search: searchBody};
-  operation.subdata     = ['suggestions'];
-
-  return mlrest.startRequest(operation);
-}
-
-function copyConstraint(destination, constraints) {
-  if (valcheck.isArray(constraints)) {
-    var isCopyKey = {
-      collection:     true,
-      range:          true,
-      word:           true,
-      'word-lexicon': true,
-      value:          true
-    };
-    var source = null;
-    var copy   = null;
-    var keys   = null;
-    var key    = null;
-    var i      = null;
-    var j      = null;
-    for (i=0; i < constraints.length; i++) {
-      source = constraints[i];
-      keys = Object.keys(source);
-      for (j=0; j < keys.length; j++) {
-        key = keys[j];
-        if (isCopyKey[key] === true) {
-          if (valcheck.isNull(copy)) {
-            copy = {};
-          }
-          copy[key] = source[key];
-        } else if (key === 'name') {
-          if (valcheck.isNull(copy)) {
-            copy = {};
-          }
-          copy.ref = source.name;
-        }
-      }
-    }
-    if (!valcheck.isNull(copy)) {
-      if (valcheck.isNullOrUndefined(destination)) {
-        destination = [];
-      }
-      destination.push(copy);
-      copy = null;
-    }
-  }
-
-  return destination;
-}
-
 function documents(client) {
   this.client = client;
 }
-documents.prototype.createWriteStream  = createWriteStream;
-documents.prototype.patch              = patchDocuments;
-documents.prototype.probe              = probeDocument;
-documents.prototype.query              = queryDocuments;
-documents.prototype.read               = readDocuments;
-documents.prototype.remove             = removeDocument;
-documents.prototype.removeAll          = removeAllDocuments;
-documents.prototype.suggest            = suggestDocuments;
-documents.prototype.write              = writeDocuments;
+documents.prototype.createReadStream  = createReadStream;
+documents.prototype.createWriteStream = createWriteStream;
+documents.prototype.patch             = patchDocuments;
+documents.prototype.probe             = probeDocument;
+documents.prototype.query             = queryDocuments;
+documents.prototype.read              = readDocuments;
+documents.prototype.remove            = removeDocument;
+documents.prototype.removeAll         = removeAllDocuments;
+documents.prototype.write             = writeDocuments;
 
-function createDocuments(client) {
-  return new documents(client);
-}
-
-module.exports = {
-    create:               createDocuments,
-    probeImpl:            probeDocumentsImpl,
-    queryImpl:            queryDocumentsImpl,
-    readImpl:             readDocumentsImpl,
-    removeImpl:           removeDocumentImpl,
-    removeCollectionImpl: removeAllDocumentsImpl,
-    writeImpl:            writeDocumentsImpl
-};
+module.exports = documents;

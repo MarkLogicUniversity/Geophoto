@@ -22,7 +22,7 @@ var db = marklogic.createDatabaseClient(exutil.restReaderConnection);
 
 console.log('Query documents with the Query Parser');
 
-db.documents.query(
+db.query(
   q.where(
     q.parsedFrom('location:Africa about:France',
       q.parseBindings(

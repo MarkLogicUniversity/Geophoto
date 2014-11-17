@@ -35,28 +35,6 @@ function createManager(adminUser, adminPassword) {
 
   setupUsers(manager, setup);
 }
-function createAxis(manager, name) {
-  return manager.post({
-    endpoint: '/manage/v2/databases/'+testconfig.testServerName+'/temporal/axes',
-    body: {
-      'axis-name': name+'Time',
-      'axis-start': {
-        'element-reference': {
-          'namespace-uri': '',
-          'localname': name+'StartTime',
-          'scalar-type': 'dateTime'
-          }
-        },
-      'axis-end': {
-        'element-reference': {
-          'namespace-uri': '',
-          'localname': name+'EndTime',
-          'scalar-type': 'dateTime'
-          }
-        }
-      }
-    }).result();
-}
 function setup(manager) {
   console.log('checking for '+testconfig.testServerName);
   manager.get({
@@ -84,54 +62,11 @@ function setup(manager) {
             endpoint: '/manage/v2/databases/'+testconfig.testServerName+'/properties'
             }).result().
           then(function(response) {
-            var indexName = null;
-            var indexType = null;
-            var indexdef  = null;
-            var i         = null;
-
-            var elementWordLexicon = response.data['element-word-lexicon'];
-            var lexiconTest = {
-                defaultWordKey: true,
-                taggedWordKey:  true
-                };
-
-            var lexers = [];
-            if (valcheck.isNullOrUndefined(elementWordLexicon)) {
-              elementWordLexicon = [];
-              lexers             = Object.keys(lexiconTest);
-            } else {
-              elementWordLexicon.forEach(function(index){
-                indexName = index.localname;
-                if (!valcheck.isUndefined(lexiconTest[indexName])) {
-                  lexiconTest[indexName] = false;
-                }
-              });
-              lexers = Object.keys(lexiconTest).filter(function(indexName){
-                return (lexiconTest[indexName] !== false);
-              });
-            }
-
-            for (i=0; i < lexers.length; i++) {
-              indexName = lexers[i];
-              indexdef  = {
-                  collation:       'http://marklogic.com/collation/',
-                  'namespace-uri': '',
-                  localname:       indexName,
-                };
-              elementWordLexicon.push(indexdef);
-            }
-
             var rangeElementIndex = response.data['range-element-index'];
 
             var rangeTest = {
-                rangeKey1:       'string',
-                rangeKey2:       'string',
-                rangeKey3:       'int',
-                rangeKey4:       'int',
-                systemStartTime: 'dateTime',
-                systemEndTime:   'dateTime',
-                validStartTime:  'dateTime',
-                validEndTime:    'dateTime'
+                rangeKey1: true,
+                rangeKey2: true
                 };
             var rangers = [];
             if (valcheck.isNullOrUndefined(rangeElementIndex)) {
@@ -139,40 +74,25 @@ function setup(manager) {
               rangers           = Object.keys(rangeTest);
             } else {
               rangeElementIndex.forEach(function(index){
-                indexName = index.localname;
-                if (!valcheck.isUndefined(rangeTest[indexName])) {
+                var indexName = index.localname;
+                if (rangeTest[indexName]) {
                   rangeTest[indexName] = false;
                 }
               });
               rangers = Object.keys(rangeTest).filter(function(indexName){
-                return (rangeTest[indexName] !== false);
+                return rangeTest[indexName];
               });
             }
 
-            for (i=0; i < rangers.length; i++) {
-              indexName = rangers[i];
-              indexType = rangeTest[indexName];
-              indexdef = {
-                  'scalar-type':           indexType,
-                  collation:               (indexType === 'string') ?
-                      'http://marklogic.com/collation/' : '',
+            for (var i=0; i < rangers.length; i++) {
+              rangeElementIndex.push({
+                  'scalar-type':           'string',
+                  collation:               'http://marklogic.com/collation/',
                   'namespace-uri':         '',
-                  localname:               indexName,
+                  localname:               rangers[i],
                   'range-value-positions': false,
                   'invalid-values':        'ignore'
-                };
-              rangeElementIndex.push(indexdef);
-            }
-            var body = {
-                'collection-lexicon':   true,
-                'triple-index':         true,
-                'schema-database':      testconfig.testServerName+'-modules',
-                };
-            if (valcheck.isArray(elementWordLexicon) && elementWordLexicon.length > 0) {
-              body['element-word-lexicon'] = elementWordLexicon;
-            }
-            if (valcheck.isArray(rangeElementIndex) && rangeElementIndex.length > 0) {
-              body['range-element-index'] = rangeElementIndex;
+                });
             }
 
             console.log('adding custom indexes for '+testconfig.testServerName);
@@ -181,71 +101,10 @@ function setup(manager) {
               params:   {
                 format: 'json'
                 },
-              body:        body,
+              body:     {
+                'range-element-index': rangeElementIndex 
+                },
               hasResponse: true
-              }).result();
-            }).
-          then(function(response) {
-            return manager.get({
-              endpoint: '/manage/v2/databases/'+testconfig.testServerName+'/temporal/axes/systemTime'
-              }).result();
-          }).
-          then(function(response) {
-            if (response.statusCode < 400) {
-              return this;
-            }
-            return createAxis(manager, 'system');
-          }).
-          then(function(response) {
-            return manager.get({
-              endpoint: '/manage/v2/databases/'+testconfig.testServerName+'/temporal/axes/validTime'
-              }).result();
-          }).
-          then(function(response) {
-            if (response.statusCode < 400) {
-              return this;
-            }
-            return createAxis(manager, 'valid');
-            }).
-          then(function(response) {
-            return manager.get({
-              endpoint: '/manage/v2/databases/'+testconfig.testServerName+
-                '/temporal/collections/temporalCollection'
-              }).result();
-            }).
-          then(function(response) {
-            if (response.statusCode < 400) {
-              return this;
-            }
-            return manager.post({
-              endpoint: '/manage/v2/databases/'+testconfig.testServerName+'/temporal/collections',
-              body: {
-                'collection-name': 'temporalCollection',
-                'system-axis': 'systemTime',
-                'valid-axis': 'validTime',
-                option: ['updates-admin-override']
-                }
-              }).result();
-            }).
-          then(function(response) {
-            return manager.get({
-              endpoint: '/manage/v2/databases/'+testconfig.testServerName+
-              '/temporal/collections/LSQT/properties?collection=temporalCollection'
-              }).result();
-            }).
-          then(function(response) {
-            if (response.statusCode < 400) {
-              return this;
-            }
-            return manager.put({
-              endpoint: '/manage/v2/databases/'+testconfig.testServerName+
-                '/temporal/collections/LSQT/properties?collection=temporalCollection',
-              body: {
-                'LSQT-enabled': true,
-                automation: {
-                  enabled: false
-                  }
-                }
               }).result();
             }).
           then(function(response) {

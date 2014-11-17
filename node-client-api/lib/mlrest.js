@@ -236,13 +236,6 @@ function startRequest(operation) {
     operation.requestWriter = started;
     requester = chunkedRequester;
     break;
-  case 'chunkedMultipart':
-    started = through2();
-    started.pause();
-    started.result = operation.resultPromise;
-    operation.requestWriter = started;
-    requester = chunkedMultipartRequester;
-    break;
   default:
     throw new Error('unknown request type '+operation.requestType);
   }
@@ -257,6 +250,15 @@ function startRequest(operation) {
     break;
   case 'multipart':
     responder = multipartResponder;
+    break;
+  case 'chunked':
+    if (started !== null) {
+      throw new Error('chunked transform not supported');
+    }
+    started = through2();
+    started.pause();
+    operation.responseReader = started;
+    responder = chunkedResponder;
     break;
   default:
     throw new Error('unknown request type '+operation.responseType);
@@ -350,48 +352,29 @@ function singleRequester(request) {
 
   var requestBodyProvider = operation.requestBodyProvider;
   if (valcheck.isFunction(requestBodyProvider)) {
-    requestBodyProvider.call(operation, request);
+    requestBodyProvider.call(operation, multipartStream);
   } else {
-    var requestSource = marshal(operation.requestBody);
-    if (valcheck.isNullOrUndefined(requestSource)) {
-      request.end();
-    } else if (valcheck.isString(requestSource)) {
-      request.write(requestSource, 'utf8');
-      request.end();
-    // readable stream might not inherit from ReadableStream
-    } else if (valcheck.isFunction(requestSource._read)) {
-      requestSource.pipe(request);
-    } else {
-      request.write(requestSource);
-      request.end();
+    var requestBody = marshal(operation.requestBody);
+    if (valcheck.isString(requestBody)) {
+      request.write(requestBody, 'utf8');
+    } else if (!valcheck.isNullOrUndefined(requestBody)) {
+      request.write(requestBody);
     }
   }
+
+  request.end();
 }
 function multipartRequester(request) {
   var operation = this;
 
   var operationBoundary = operation.multipartBoundary;
+
   var multipartStream = createMultipartStream({
     prefix: valcheck.isNullOrUndefined(operationBoundary) ?
         multipartBoundary : operationBoundary
   });
-
-/* TODO: better stream spy
-  var debugLevel = winston.levels['debug'];
-  var logLevel   = winston.levels[operation.logger.transports.Console.level];
-  if (logLevel >= debugLevel) {
-  if (false) {
-    multipartStream.pipe(through2(function(chunk, encoding, done) {
-      operation.logger.debug(chunk.toString());
-      this.push(chunk);
-      done();
-      })).
-    pipe(request);
-  } else {
-    multipartStream.pipe(request);
-  }
- */
   multipartStream.pipe(request);
+  // TODO: stream spy
   multipartStream.resume();
 
   var requestPartsProvider = operation.requestPartsProvider;
@@ -408,13 +391,8 @@ function multipartRequester(request) {
         var content = part.content;
         if (!valcheck.isNullOrUndefined(headers) &&
             !valcheck.isNullOrUndefined(content)) {
-          operation.logger.debug('starting part %s', i);
-          // readable stream might not inherit from ReadableStream
-          if (valcheck.isFunction(content._read)) {
-            content.pause();
-          }
-          multipartStream.write(headers, content);
-          operation.logger.debug('finished part %s', i);
+          // TODO: marshalling twice?
+          multipartStream.write(headers, marshal(content));
         } else {
           operation.logger.debug('nothing to write for part %d', i);
         }
@@ -427,18 +405,6 @@ function multipartRequester(request) {
   multipartStream.end();
 }
 function chunkedRequester(request) {
-  var operation = this;
-
-  var requestWriter = operation.requestWriter;
-  if (valcheck.isNullOrUndefined(requestWriter)) {
-    operation.dispatchEndError('no request writer for streaming request');
-    request.end();
-  }
-
-  requestWriter.pipe(request);
-  requestWriter.resume();
-}
-function chunkedMultipartRequester(request) {
   var operation = this;
 
   var requestWriter = operation.requestWriter;
@@ -508,22 +474,12 @@ function singleResponder(response) {
 
   var isString = operation.copyResponseHeaders(response);
 
-  if (operation.outputStreamMode === 'chunked') {
-    var outputStream = operation.outputStream;
-    if (valcheck.isNullOrUndefined(outputStream)) {
-      operation.dispatchEndError('no output stream to consume response');
-      response.resume();
-    } else {
-      response.pipe(outputStream);
-    }    
-  } else {
-    var bodyReader = concatStream(
-        {encoding: (isString ? 'string' : 'buffer')},
-        mlutil.callbackOn(operation, dispatchBody)
-        );
-      bodyReader.on('error', operation.errorListener);
-      response.pipe(bodyReader);
-  }
+  var bodyReader = concatStream(
+    {encoding: (isString ? 'string' : 'buffer')},
+    mlutil.callbackOn(operation, dispatchBody)
+    );
+  bodyReader.on('error', operation.errorListener);
+  response.pipe(bodyReader);
 }
 function multipartResponder(response) {
   var operation = this;
@@ -531,6 +487,7 @@ function multipartResponder(response) {
   if (!isResponseStatusOkay.call(operation, response)) {
     return;
   }
+
   response.on('error', operation.errorListener);
 
   // TODO: bulk read should insert parts for documents that don't exist
@@ -551,6 +508,7 @@ function multipartResponder(response) {
     operation.dispatchEndError('response without multipart/mixed mime type or boundary');
     return;
   }
+
   if (responseBoundary !== multipartBoundary) {
     operation.logger.debug(
         'expected '+multipartBoundary+
@@ -563,6 +521,26 @@ function multipartResponder(response) {
   operation.initPartParser(parser);
 
   response.pipe(parser);
+}
+function chunkedResponder(response) {
+  var operation = this;
+
+  if (!isResponseStatusOkay.call(operation, response)) {
+    return;
+  }
+
+  response.on('error', operation.errorListener);
+
+  operation.copyResponseHeaders(response);
+
+  var responseReader = operation.responseReader;
+  if (valcheck.isNullOrUndefined(responseReader)) {
+    operation.dispatchEndError('no response reader to consume response');
+    response.resume();
+  } else {
+    responseReader.resume();
+    response.pipe(responseReader);
+  }
 }
 
 function isResponseStatusOkay(response) {
@@ -635,10 +613,7 @@ function Operation(name, client, options, requestType, responseType) {
   this.resultPromise     = mlutil.callbackOn(this, operationResultPromise);
   this.resultStream      = null;
   this.outputStream      = null;
-  this.streamDefaultMode = 'object';
-  this.streamModes       = this.STREAM_MODES_CHUNKED_OBJECT;
 }
-Operation.prototype.STREAM_MODES_CHUNKED_OBJECT = {chunked: true, object: true};
 
 function createOperation(name, client, options, requestType, responseType) {
   return new Operation(name, client, options, requestType, responseType);
@@ -679,21 +654,9 @@ function partListener(part) {
   part.on('error', operation.errorListener);
   part.on('header', partResponder.headersListener);
 
-  var partReader = null;
-  if (operation.outputStreamMode === 'chunked') {
-    var outputStream = operation.outputStream;
-    if (valcheck.isNullOrUndefined(outputStream)) {
-      operation.dispatchEndError('no output stream to consume part');
-      part.resume();
-    } else {
-      operation.logger.debug('writing part to chunked stream');
-      partReader = outputStream;
-    }    
-  } else {
-    // TODO: better to know part type before create part reader
-    //      {encoding: (isUtf8 ? 'string' : 'buffer')},
-    partReader = concatStream(partResponder.contentListener);
-  }
+  // TODO: better to know part type before create part reader
+  //      {encoding: (isUtf8 ? 'string' : 'buffer')},
+  var partReader = concatStream(partResponder.contentListener);
   partReader.on('error', operation.errorListener);
 
   part.pipe(partReader);  
@@ -704,7 +667,7 @@ function partFinishListener() {
   operation.hasFinished = true;
   if (!valcheck.isNullOrUndefined(operation.partQueue)) {
     operation.dispatchParts();
-  }
+  }  
 }
 
 function PartResponder(operation, part) {
@@ -712,7 +675,6 @@ function PartResponder(operation, part) {
   this.part      = part;
 
   this.parsing     = true;
-  this.rawHeaders  = null;
   this.partHeaders = null;
   this.isInline    = false;
   this.format      = null;
@@ -726,15 +688,13 @@ function partHeadersListener(headers) {
   var part = this.part;
   var partResponder = this;
 
-  partResponder.rawHeaders = headers;
-
-  var partHeaders = parsePartHeaders(headers);
+  partHeaders = parsePartHeaders(headers);
   partResponder.partHeaders = partHeaders;
 
-  var isInline = (partHeaders.partType === 'inline');
+  isInline = (partHeaders.partType === 'inline');
   partResponder.isInline = isInline;
 
-  var isMetadata = (partHeaders.category && partHeaders.category !== 'content');
+  isMetadata = (partHeaders.category && partHeaders.category !== 'content');
   partResponder.isMetadata = isMetadata;
 
   if (isInline) {
@@ -745,7 +705,7 @@ function partHeadersListener(headers) {
     operation.logger.debug('starting parse of %s document', partHeaders.uri);
   }
 
-  var format = partHeaders.format;
+  format = partHeaders.format;
   if (format === undefined) {
     if (isInline || isMetadata) {
       format = 'json';
@@ -756,7 +716,7 @@ function partHeadersListener(headers) {
   }
   partResponder.format = format;
 
-  var isUtf8 = (
+  isUtf8 = (
       isInline || isMetadata || format === 'json' || format === 'text' || format === 'xml'
       );
   partResponder.isUtf8 = isUtf8 ;
@@ -818,7 +778,7 @@ function dispatchParts() {
       partQueue[nextPart] = null;
       operation.logger.debug('dispatching inline part');
       // TODO: identify the kind of inline part
-      operation.dispatchData(partResponder.rawHeaders, partResponder.partHeaders.content);
+      operation.dispatchData(partResponder.partHeaders.content);
       continue;
     }
 
@@ -829,7 +789,7 @@ function dispatchParts() {
     if (!partResponder.isMetadata) {
       partQueue[nextPart] = null;
       operation.logger.debug('dispatching content part for %s', uri);
-      operation.dispatchData(partResponder.rawHeaders, partHeaders);
+      operation.dispatchData(partHeaders);
       continue;
     }
 
@@ -840,7 +800,7 @@ function dispatchParts() {
         operation.logger.debug('dispatching standalone metadata part for %s', uri);
         mlutil.copyProperties(partHeaders.content, partHeaders);
         delete partHeaders.content;
-        operation.dispatchData(partResponder.rawHeaders, partHeaders);
+        operation.dispatchData(partHeaders);
         continue;
       }
       break;
@@ -853,7 +813,7 @@ function dispatchParts() {
       operation.logger.debug('dispatching standalone metadata part for %s', uri);
       mlutil.copyProperties(partHeaders.content, partHeaders);
       delete partHeaders.content;
-      operation.dispatchData(partResponder.rawHeaders, partHeaders);
+      operation.dispatchData(partHeaders);
       continue;
     }
 
@@ -866,7 +826,7 @@ function dispatchParts() {
     operation.nextPart = nextPart;
   } else {
     operation.logger.debug('processed %d parts', queueLen);
-    operation.partQueue = undefined;
+    delete operation.partQueue;
     operation.dispatchEnd();
   }
 }
@@ -875,7 +835,7 @@ Operation.prototype.dispatchParts = dispatchParts;
 function dispatchEmpty() {
   var operation = this;
 
-  operation.dispatchData(operation.rawHeaders, null);
+  operation.dispatchData(null);
   operation.dispatchEnd();
 }
 Operation.prototype.dispatchEmpty = dispatchEmpty;
@@ -886,33 +846,30 @@ function dispatchBody(data) {
   var value  = valcheck.isNullOrUndefined(format) ?
       data : unmarshal(format, data);
 
-  operation.dispatchData(operation.rawHeaders, value);
+  operation.dispatchData(value);
   operation.dispatchEnd();
 }
 Operation.prototype.dispatchBody = dispatchBody;
-/* TODO: delete
 function dispatchMetadata(metadata) {
   var operation = this;
 
   mlutil.copyProperties(metadata.content, metadata);
-  metadata.content = undefined;
+  delete metadata.content;
   operation.dispatchData(metadata);
 }
 Operation.prototype.dispatchMetadata = dispatchMetadata;
- */
-function dispatchData(headers, data) {
+function dispatchData(data) {
   var operation = this;
-
-  if (valcheck.isArray(operation.subdata)) {
-    data = projectData(data, operation.subdata, 0);
-  }
 
   var outputTransform = operation.outputTransform;
   var output = valcheck.isNullOrUndefined(outputTransform) ? data :
-    outputTransform.call(operation, headers, data);
+    outputTransform.call(operation, data);
 
   if (!valcheck.isUndefined(output)) {
     var isNullOutput = valcheck.isNull(output);
+    if (!isNullOutput && !valcheck.isNullOrUndefined(output.partType)) {
+      delete output.partType;
+    }
 
     var outputStream = operation.outputStream;
     if (!valcheck.isNullOrUndefined(outputStream)) {
@@ -925,22 +882,6 @@ function dispatchData(headers, data) {
   } else {
     operation.logger.debug('dispatch skipped undefined output');
   }
-}
-function projectData(data, subdata, i) {
-  if (i === subdata.length || valcheck.isNullOrUndefined(data)) {
-    return data;
-  }
-
-  var key = subdata[i];
-  if (!valcheck.isArray(data)) {
-    return projectData(data[key], subdata, i + 1);
-  }
-
-  var newData = [];
-  for (var j=0; j < data.length; j++) {
-    newData.push(projectData(data[j][key], subdata, i + 1));
-  }
-  return newData;
 }
 Operation.prototype.dispatchData = dispatchData;
 
@@ -958,15 +899,15 @@ function dispatchError(error) {
     valcheck.isNullOrUndefined(error) ? operation.makeError('unknown error') :
     valcheck.isString(error)          ? operation.makeError(error) :
     error;
+  if (!valcheck.isNullOrUndefined(input.body)) {
+    operation.logger.error(input.message, input.body);
+  } else {
+    operation.logger.error(input.message);
+  }
 
   var outputStream = operation.outputStream;
   if (!valcheck.isNullOrUndefined(outputStream)) {
-    var errorListeners = outputStream.listeners('error');
-    if (valcheck.isArray(errorListeners) && errorListeners.length > 0) {
-      outputStream.emit('error', input);
-    } else {
-      operation.logError(input);
-    }
+    outputStream.emit('error', input);
   } else if (valcheck.isNullOrUndefined(operation.error)) {
     operation.error = [ input ];
   } else {
@@ -974,16 +915,6 @@ function dispatchError(error) {
   }
 }
 Operation.prototype.dispatchError = dispatchError;
-function logError(error) {
-  var operation = this;
-
-  if (!valcheck.isNullOrUndefined(error.body)) {
-    operation.logger.error(error.message, error.body);
-  } else {
-    operation.logger.error(error.message);
-  }
-}
-Operation.prototype.logError = logError;
 function makeError(message) {
   var operation = this;
 
@@ -1003,11 +934,13 @@ function dispatchEnd() {
 
   operation.done = true;
 
+  // TODO: cleanup
+
   var outputStream = operation.outputStream;
   if (!valcheck.isNullOrUndefined(outputStream)) {
     outputStream.end();
 
-    operation.outputStream = undefined;
+    delete operation.outputStream;
 
     return;
   }
@@ -1044,6 +977,10 @@ function resolvedPromise(operation, resolve) {
   }
 }
 function rejectedPromise(operation, reject) {
+  if (valcheck.isNullOrUndefined(reject)) {
+    return false;
+  }
+
   var errorArray = operation.error;
   if (!valcheck.isArray(errorArray)) {
     return false;
@@ -1052,13 +989,6 @@ function rejectedPromise(operation, reject) {
   var errorLen = errorArray.length;
   if (errorLen === 0) {
     return false;
-  }
-
-  if (valcheck.isNullOrUndefined(reject)) {
-    for (var i=0; i < errorLen; i++) {
-      operation.logError(errorArray[i]);
-    }
-    return true;
   }
 
   operation.logger.debug('deferred promise rejecting with '+errorLen+' error messages');
@@ -1107,18 +1037,8 @@ function operationResultStream() {
     throw new Error('cannot create stream after creating result promise');
   }
 
-  var streamArg  = (arguments.length > 0) ? arguments[0] : null;
-  var streamMode = null;
-  if (streamArg === null) {
-    streamMode = operation.streamDefaultMode;
-  } else if (operation.streamModes[streamArg] === true) {
-    streamMode = streamArg;
-  } else {
-    throw new Error('stream mode not supported for this request');
-  }
-  operation.outputStreamMode = streamMode;
-
-  var outputStream = through2({objectMode: (streamMode === 'object') ? true : false});
+  // 'chunked' responseReader supports binary streams
+  var outputStream = through2({objectMode:true});
   operation.outputStream = outputStream;
 
   var i = null;
@@ -1128,7 +1048,7 @@ function operationResultStream() {
     for (i=0; i < error.length; i++) {
       outputStream.emit('error', error[i]);      
     }
-    operation.error = undefined;
+    delete operation.error;
   }
 
   var data = operation.data;
@@ -1136,7 +1056,7 @@ function operationResultStream() {
     for (i=0; i < data.length; i++) {
       outputStream.emit('data', data[i]);      
     }
-    operation.data = undefined;
+    delete operation.data;
   }
 
   return outputStream;
@@ -1148,12 +1068,9 @@ function copyResponseHeaders(response) {
   var responseHeaders    = response.headers;
   var responseStatusCode = response.statusCode;
 
-  operation.logger.debug('response headers', responseHeaders);
-
   var operationHeaders = {};
 
   operation.responseStatusCode = responseStatusCode;
-  operation.rawHeaders         = response.headers;
   operation.responseHeaders    = operationHeaders;
 
   var isString = false;
@@ -1185,25 +1102,27 @@ function copyResponseHeaders(response) {
 
   var format = responseHeaders['vnd.marklogic.document-format'];
   var hasFormat = !valcheck.isNullOrUndefined(format);
-  if (!hasFormat && hasContentType) {
-    if (/^multipart\/mixed(;.*)?$/.test(contentType)) {
-      format = 'binary';
-      hasFormat = true;
-      isString  = false;
-    } else {
-      format = contentType.replace(
-          /^(application|text)\/([^+]+\+)?(json|xml)$/, '$3'
-          );
-      hasFormat = !valcheck.isNullOrUndefined(format);
-      if (hasFormat) {
+  if (!hasFormat) {
+    if (hasContentType) {
+      if (contentType.match(/^multipart\/mixed(;.*)?$/)) {
+        format = 'binary';
         hasFormat = true;
-        isString = true;
+        isString  = false;
       } else {
-        hasFormat = /^(text)\//.test(contentType);
+        format = contentType.replace(
+            /^(application|text)\/([^+]+\+)?(json|xml)$/, '$3'
+            );
+        hasFormat = !valcheck.isNullOrUndefined(format);
         if (hasFormat) {
-          format = 'text';
+          hasFormat = true;
           isString = true;
-        }
+        } else {
+          hasFormat = contentType.match(/^(text)\//);
+          if (hasFormat) {
+            format = 'text';
+            isString = true;
+          }
+        }        
       }
     }
   }

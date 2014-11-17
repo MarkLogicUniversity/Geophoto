@@ -5,22 +5,9 @@ from node.js.
 
 ## Status
 
-This branch provides the work in progress for the Early Access Release 3 of the  MarkLogic node.js API.
+The MarkLogic node.js API is currently in Early Access Release 2.
 
-### Checked in for EA3
-
-* quick path for simple JavaScript object CRUD and query
-* values and tuples requests
-* server-side transforms on query response summary and result documents in slice() clause
-* snippets including custom snippets in slice() clause
-* projection from result documents (extract)
-* resource service CRUD and invocation for XQuery
-* graph CRUD and SPARQL query
-* specifying the database when creating a database client
-* search suggest
-* server-side eval
-
-## Getting started
+### Getting started
 
 Please register at the MarkLogic Early Access website and then follow the tutorial instructions:
 
@@ -32,13 +19,13 @@ The instructions describe:
 * cloning this repository to set up the API
 * working through some initial examples to get familiar with the API
 
-For more detail about the API, use the documentation login from the Early Access to view
-the reference documentation:
+For more detail about the API, use the documentation login from the Early Access
+to view the reference documentation:
 
 http://docs-ea.marklogic.com/jsdoc/index.html
 
-After installing the dependencies including gulp, you can also build the documentation locally
-from the root directory of the marklogic package:
+After installing the dependencies including gulp, you can also build the documentation
+locally from the root directory of the marklogic package:
 
     gulp doc
 
@@ -111,5 +98,13 @@ To tear down the test database and REST server, execute
 The MarkLogic node.js Client API has not yet undergone performance or
 stress testing.  The API should not be used in production in EA2.
 
-## Support
-The MarkLogic Node.js Client API is maintained by MarkLogic Engineering. It is designed for use in production applications with MarkLogic Server. Everyone is encouraged to file bug reports, feature requests, and pull requests through GitHub. This input is critical and will be carefully considered, but we can’t promise a specific resolution or timeframe for any request. In addition, MarkLogic provides technical support for [release tags](https://github.com/marklogic/node-client-api/releases) of the Node Client API to licensed customers under the terms outlined in the [Support Handbook](http://www.marklogic.com/files/Mark_Logic_Support_Handbook.pdf). For more information or to sign up for support, visit [help.marklogic.com](help.marklogic.com).
+### Candidate Features for Early Access 3
+
+* projection from result documents
+* values and tuples lists
+* resource service CRUD and invocation
+* server-side eval
+* graph CRUD
+* aggregates on facets
+* specifying the database when creating a database client
+* pluggable XML conversion

@@ -34,7 +34,7 @@ function pathErrorTransform(message) {
  */
 
 /** @ignore */
-function emptyOutputTransform(headers, data) {
+function emptyOutputTransform(data) {
   var operation = this;
 
   return {
@@ -55,11 +55,9 @@ function readExtensionLibrary(path) {
 
   var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'GET';
-  requestOptions.path = encodeURI(
-      (path.substr(0,5) === '/ext/') ? ('/v1'+path)     :
-      (path.substr(0,1) === '/')     ? ('/v1/ext'+path) :
-      ('/v1/ext/'+path)
-      );
+  requestOptions.path = encodeURI('/v1/ext'+(
+    (path.substring(0,1) === '/') ? path : ('/'+path)
+    ));
 
   var operation = mlrest.createOperation(
       'read extension library', this.client, requestOptions, 'empty', 'single'
@@ -74,75 +72,14 @@ function readExtensionLibrary(path) {
  * Installs a library resource on the server.
  * @method config.extlibs#write
  * @param {string} path - the location for installing the library resource
- * @property {object[]} [permissions] - the permissions controlling which users can read, update, or
- * execute the library resource
  * @param {string} contentType - the mime type for the library resource
  * @param {object|string} source - the library resource
  */
-function writeExtensionLibrary() {
-  var args = mlutil.asArray.apply(null, arguments);
-  var argLen = args.length;
-  if (argLen === 0) {
-    throw new Error('no arguments for writing an extension library');
-  }
-
-  var path = null;
-  var permissions = null;
-  var contentType = null;
-  var source = null;
-  var i = 0;
-  var arg = null;
-  if (argLen === 1) {
-    params = args[0];
-    path        = params.path;
-    permissions = params.permissions;
-    contentType = params.contentType;
-    source      = params.source;    
-  } else {
-    var argMax = Math.min(argLen,4);
-    for (;i < argMax; i++) {
-      arg = args[i];
-      if (valcheck.isString(arg)) {
-        if (path === null) {
-          path = arg; 
-        } else if (contentType === null) {
-          contentType = arg; 
-        }
-      } else if (valcheck.isArray(arg)) {
-        permissions = arg;
-      } else if (!valcheck.isUndefined(arg['role-name'])) {
-        permissions = [arg];
-      } else {
-        source = arg;
-      }
-    }
-  }
-
+function writeExtensionLibrary(path, contentType, resource) {
+  // TODO: pipe from file system
   if (valcheck.isNullOrUndefined(path) || valcheck.isNullOrUndefined(contentType) ||
-      valcheck.isNullOrUndefined(source)) {
-    throw new Error('must specify the path, content type, and source when writing a extension library');
-  }
-
-  var endpoint = 
-      (path.substr(0,5) === '/ext/') ? ('/v1'+path)     :
-      (path.substr(0,1) === '/')     ? ('/v1/ext'+path) :
-      ('/v1/ext/'+path);
-
-  if (valcheck.isArray(permissions)) {
-    var role = null;
-    var capabilities = null;
-    var j=null;
-    for (i=0; i < permissions.length; i++) {
-      arg = permissions[i];
-      role = arg['role-name'];
-      capabilities = arg.capabilities;
-      if (valcheck.isUndefined(role) || !valcheck.isArray(capabilities) || capabilities.length < 1) {
-        throw new Error('cannot set permissions from '+JSON.stringify(arg));        
-      }
-      for (j=0; j < capabilities.length; j++) {
-        endpoint += ((i === 0 && j=== 0) ? '?' : '&') + 'perm:'+role+'='+capabilities[j];
-      }
-    }
+      valcheck.isNullOrUndefined(resource)) {
+    throw new Error('must specify path, content type, and resource when writing a extension library');
   }
 
   var requestOptions = mlutil.copyProperties(this.client.connectionParams);
@@ -150,13 +87,15 @@ function writeExtensionLibrary() {
   requestOptions.headers = {
       'Content-Type': contentType
   };
-  requestOptions.path = encodeURI(endpoint);
+  requestOptions.path = encodeURI('/v1/ext'+(
+    (path.substring(0,1) === '/') ? path : ('/'+path)
+    ));
 
   var operation = mlrest.createOperation(
       'write extension library', this.client, requestOptions, 'single', 'empty'
       );
   operation.path            = path;
-  operation.requestBody     = source;
+  operation.requestBody     = resource;
   operation.outputTransform = emptyOutputTransform;
   operation.errorTransform  = pathErrorTransform;
 
@@ -175,11 +114,9 @@ function removeExtensionLibrary(path) {
 
   var requestOptions = mlutil.copyProperties(this.client.connectionParams);
   requestOptions.method = 'DELETE';
-  requestOptions.path = encodeURI(
-    (path.substr(0,5) === '/ext/') ? ('/v1'+path)     :
-    (path.substr(0,1) === '/')     ? ('/v1/ext'+path) :
-    ('/v1/ext/'+path)
-    );
+  requestOptions.path = encodeURI('/v1/ext'+(
+    (path.substring(0,1) === '/') ? path : ('/'+path)
+    ));
 
   var operation = mlrest.createOperation(
       'remove extension library', this.client, requestOptions, 'empty', 'empty'
@@ -207,23 +144,17 @@ function listExtensionLibraries(directory) {
 
   if (!valcheck.isString(directory)) {
     requestOptions.path = '/v1/ext';  
-  } else if (directory.substr(0,5) === '/ext/') {
-    if (directory.substr(-1,1) === '/') {
-      requestOptions.path = encodeURI(directory);      
-    } else {
-      requestOptions.path = encodeURI(directory+'/');
-    }
   } else {
-    var hasInitialSlash  = (directory.substr(0,1)  === '/');
+    var hasInitialSlash  = (directory.substr(0,1) === '/');
     var hasTrailingSlash = (directory.substr(-1,1) === '/');
     if (hasInitialSlash && hasTrailingSlash) {
-      requestOptions.path = encodeURI('/v1/ext'  + directory);
+      requestOptions.path =  encodeURI('/v1/ext'+ directory.substr(0, directory.length - 1));
     } else if (hasTrailingSlash) {
-      requestOptions.path = encodeURI('/v1/ext/' + directory);
+      requestOptions.path =  encodeURI('/v1/ext/'+ directory.substr(0, directory.length - 1));
     } else if (hasInitialSlash) {
-      requestOptions.path = encodeURI('/v1/ext'  + directory+'/');
+      requestOptions.path =  encodeURI('/v1/ext'+ directory);
     } else {
-      requestOptions.path = encodeURI('/v1/ext/' + directory+'/');
+      requestOptions.path =  encodeURI('/v1/ext/'+ directory);
     }
   }
 

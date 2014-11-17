@@ -21,7 +21,7 @@ var db = marklogic.createDatabaseClient(exutil.restWriterConnection);
 
 console.log('Write two documents');
 
-db.documents.write([
+db.write([
     { uri: '/tmp/eldorado.json',
       category: 'content',
       contentType: 'application/json',
@@ -49,7 +49,7 @@ db.documents.write([
     var removedByCollection = null;
 
     console.log('Remove a document by uri');
-    db.documents.remove('/tmp/eldorado.json').
+    db.remove('/tmp/eldorado.json').
     result(function(response) {
       console.log('Removed the document with uri: '+response.uri);
       removedByUri = isFinishing(removedByCollection);
@@ -58,7 +58,7 @@ db.documents.write([
     });
 
     console.log('Remove the documents in a collection\n');
-    db.documents.removeAll({collections:'/imaginary/countries'}).
+    db.removeAll({collections:'/imaginary/countries'}).
     result(function(response) {
       console.log('Removed all documents in the collection: '+response.collections);
       removedByCollection = isFinishing(removedByUri);

@@ -34,7 +34,7 @@ function nameErrorTransform(message) {
  */
 
 /** @ignore */
-function emptyOutputTransform(headers, data) {
+function emptyOutputTransform(data) {
   var operation = this;
 
   return {
@@ -73,36 +73,8 @@ function readTransform(name) {
  * @param {string} format - a value from the xquery|xslt enumeration
  * @param {object|string} source - the source for the transform
  */
-function writeTransform() {
-  var args = mlutil.asArray.apply(null, arguments);
-  var argLen = args.length;
-  if (argLen === 0) {
-    throw new Error('no arguments for writing an extension library');
-  }
-
-  var name        = null;
-  var title       = null;
-  var description = null;
-  var provider    = null;
-  var version     = null;
-  var format      = null;
-  var source      = null;
-
-  if (argLen === 1) {
-    params = args[0];
-    name        = params.name;
-    title       = params.title;
-    description = params.description;
-    provider    = params.provider;
-    version     = params.version;
-    format      = params.format;
-    source      = params.source;
-  } else if (argLen > 2){
-    name   = args[0];
-    format = args[1];
-    source = args[2];    
-  }
-
+function writeTransform(name, format, source) {
+  // TODO: pipe from file system
   if (valcheck.isNullOrUndefined(name) || valcheck.isNullOrUndefined(format) ||
       valcheck.isNullOrUndefined(source)) {
     throw new Error('must specify name, format, and source when writing a transform');
@@ -110,37 +82,14 @@ function writeTransform() {
 
   var contentType = null;
   switch(format) {
-  case 'javascript':
-    contentType = 'application/javascript';
+  case 'xslt':
+    contentType = 'application/xslt+xml';
     break;
   case 'xquery':
     contentType = 'application/xquery';
     break;
-  case 'xslt':
-    contentType = 'application/xslt+xml';
-    break;
   default:
     throw new Error('unsupported transform format '+format);
-  }
-
-  var endpoint = '/v1/config/transforms/'+name;
-
-  var sep = '?';
-  if (!valcheck.isNullOrUndefined(title)) {
-    endpoint += sep+'title='+title;
-    if (sep === '?') {sep = '&';}
-  }
-  if (!valcheck.isNullOrUndefined(description)) {
-    endpoint += sep+'description='+description;
-    if (sep === '?') {sep = '&';}
-  }
-  if (!valcheck.isNullOrUndefined(provider)) {
-    endpoint += sep+'provider='+provider;
-    if (sep === '?') {sep = '&';}
-  }
-  if (!valcheck.isNullOrUndefined(version)) {
-    endpoint += sep+'version='+version;
-    if (sep === '?') {sep = '&';}
   }
 
   var requestOptions = mlutil.copyProperties(this.client.connectionParams);
@@ -148,7 +97,7 @@ function writeTransform() {
   requestOptions.headers = {
       'Content-Type': contentType
   };
-  requestOptions.path = encodeURI(endpoint);
+  requestOptions.path = encodeURI('/v1/config/transforms/'+name);
 
   var operation = mlrest.createOperation(
       'write transform', this.client, requestOptions, 'single', 'empty'

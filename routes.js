@@ -44,7 +44,7 @@ var patchDocument = function(uri, update, callback) {
         .then(function(document) {
             var oldDocument = document[0].content;
             if (oldDocument.title === 'undefined') {
-                oldDocument.title = update; 
+                oldDocument.title = update;
             } else {
                 oldDocument['title'] = update;
                 var newDocument = oldDocument;
@@ -52,7 +52,7 @@ var patchDocument = function(uri, update, callback) {
 
             return db.documents.write({
                 uri: document[0].uri,
-                collection: 'image',
+                collections: ['image'],
                 content: newDocument
             }).result(function (response) {
                 callback(newDocument);
@@ -124,7 +124,7 @@ var apisearch = function(req, res) {
     var radius = req.params.radius;
     var lat = req.params.lat;
     var lng = req.params.lng;
-    
+
     var search = {
         radius: radius,
         lat: lat,
