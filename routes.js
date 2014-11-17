@@ -1,16 +1,35 @@
 'use strict';
 
 // route handler for the API
-var marklogic =require('./node-client-api/lib/marklogic.js'),
+var marklogic  =require('./node-client-api/lib/marklogic.js'),
     connection = require('./dbsettings').connection,
-    db = marklogic.createDatabaseClient(connection),
-    q = marklogic.queryBuilder,
-    p = marklogic.patchBuilder,
-    _ = require('lodash');
+    db         = marklogic.createDatabaseClient(connection),
+    qb         = marklogic.queryBuilder,
+    p          = marklogic.patchBuilder;
 
+/*
+function to select all documents from the database - the query is restricted to
+retrieve images from the 'image' collection. The 'image' collection consists of
+documents that are describing the image itself but they have no binary data. The
+binary data is only linked
+
+e.g.
+
+{
+  "filename": "IMG_6193.jpg",
+  "location": {
+  "type": "Point",
+  "coordinates": [
+    43.7385,
+    7.429167
+    ]
+  },
+  "binary": "/binary/IMG_6193.jpg"
+}
+*/
 var selectAll = function selectAll(callback) {
     var docs = [];
-    db.documents.query(q.where(q.collection('image')).slice(0,300)).result(function(documents) {
+    db.documents.query(qb.where(qb.collection('image')).slice(0,300)).result(function(documents) {
         documents.forEach(function (document) {
             docs.push(document.content);
         });
@@ -18,6 +37,7 @@ var selectAll = function selectAll(callback) {
     });
 };
 
+/* This function selects one image from the database */
 var selectOne = function selectOne(uri, callback) {
     var oneDocument = [];
     db.documents.read('/image/' + uri + '.json').result().then(function (doc) {
@@ -28,6 +48,10 @@ var selectOne = function selectOne(uri, callback) {
     })
 };
 
+/* This function is responsible for retrieving the binary data from the database.
+Once the data is retrieve it is converted to a base64 encoded string. In the frontend
+this data is then used as a data-uri to build up the image itself
+*/
 var selectImageData = function selectImageData(uri, callback) {
     var imageData = [];
     db.documents.read('/binary/' + uri).result().then(function (data) {
@@ -38,7 +62,10 @@ var selectImageData = function selectImageData(uri, callback) {
     });
 };
 
-var patchDocument = function(uri, update, callback) {
+/* This function updates the document. From the frontend we are allowed to set/change
+the title of an image.
+*/
+var updateDocument = function(uri, update, callback) {
     db.documents.read('/image/' + uri + '.json')
         .result()
         .then(function(document) {
@@ -60,17 +87,24 @@ var patchDocument = function(uri, update, callback) {
         });
 };
 
+/* This function is responsible for doing a geospatial search
+
+Geospatial search in MarkLogic uses a geo object (in thise case a geo path)
+and it also has support for 4 geospatial types. We have circle, square, polygon
+and point. In this function we are using the geospatial circle
+*/
 var geoSearch = function search (object, callback) {
-    var docs = [];
-    var radius = parseInt(object.radius);
-    var lat = parseFloat(object.lat);
-    var lng = parseFloat(object.lng);
+    var docs = [],
+    radius   = parseInt(object.radius),
+    lat      = parseFloat(object.lat),
+    lng      = parseFloat(object.lng);
+
     db.documents.query(
-        q.where(
-            q.collection('image'),
-                q.geoPath(
+        qb.where(
+            qb.collection('image'),
+                qb.geoPath(
                    'location/coordinates',
-                    q.circle(radius, lat, lng)
+                    qb.circle(radius, lat, lng)
                 )
             ).slice(0,300).withOptions({categories:['content']})
         ).result(function(documents) {
@@ -80,13 +114,22 @@ var geoSearch = function search (object, callback) {
             callback(docs);
         });
 };
+/*
+When specified the function below are making use of ExpressJS' req.params object
+that contains the URL parameters that are sent with the request so:
+if the route configuration contains:
+/api/:id then the following URL http://localhost/api/image1234 will have a
+'req.params.id' value that we can capture.
+*/
 
+/* wrapper function for selectAll() to retrieve all documents */
 var apiindex = function(req, res) {
     selectAll(function(documents) {
         res.json(documents);
     });
 };
 
+/* wrapper function to retrieve one document information */
 var apiimage = function(req, res) {
     var id = req.params.id;
     var doc = [];
@@ -99,31 +142,31 @@ var apiimage = function(req, res) {
     });
 };
 
+/* wrapper function to retrieve image data */
 var apiimagedata = function(req, res) {
     var id = req.params.id;
     var doc = [];
     selectImageData(id, function (imageData) {
         res.json(imageData);
     });
-    // selectImageData(id, function(doc) {
-    //     console.log(doc);
-    //     res.json(doc);
-    // })
 };
 
+/* wrapper function to update a document's title */
 var apiadd = function(req, res) {
     var id = req.params.id;
     var update = req.params.update;
-    patchDocument(id, update, function (data) {
+    updateDocument(id, update, function (data) {
         res.json(200);
     });
 
 };
 
+/* wrapper function for the geospatial search */
+/
 var apisearch = function(req, res) {
-    var radius = req.params.radius;
-    var lat = req.params.lat;
-    var lng = req.params.lng;
+    var radius = req.params.radius,
+    lat        = req.params.lat,
+    lng        = req.params.lng;
 
     var search = {
         radius: radius,
@@ -140,6 +183,7 @@ var appindex = function(req, res) {
     res.render('index');
 };
 
+/* this route configuration is needed as we are using jade files */
 var partials = function partials(req, res) {
     var name = req.params.name;
     res.render('partials/' + name);

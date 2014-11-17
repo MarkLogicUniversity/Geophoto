@@ -1,13 +1,13 @@
 'use strict';
 process.env.NODE_ENV = 'development';
 
-var express = require('express'),
-    bodyParser = require('body-parser'),
+var express        = require('express'),
+    bodyParser     = require('body-parser'),
     methodOverride = require('method-override'),
-    app = express(),
-    router = express.Router(),
-    routes = require('./routes').app,
-    apiroutes = require('./routes').api;
+    app            = express(),
+    router         = express.Router(),
+    routes         = require('./routes').app,
+    apiroutes      = require('./routes').api;
 
 app.set('port', 3000);
 app.set('view engine', 'jade');
@@ -23,8 +23,10 @@ if (app.get('env') === 'development') {
   app.locals.pretty = true;
 }
 
+/*
+Basic route configuration
+*/
 router.route('/').get(routes.index);
-
 router.route('/api/').get(apiroutes.index);
 router.route('/api/image/:id').get(apiroutes.image);
 router.route('/api/image/search/:radius/:lat/:lng').get(apiroutes.search);
@@ -38,4 +40,4 @@ router.route('/partials/:name').get(routes.partials);
 app.use('/', router);
 
 app.listen(app.get('port'));
-console.log('Magic happens on port 3000');
+console.log('Magic happens on port ' + app.get('port'));
