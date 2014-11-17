@@ -5,7 +5,8 @@ var marklogic =require('./node-client-api/lib/marklogic.js'),
     connection = require('./dbsettings').connection,
     db = marklogic.createDatabaseClient(connection),
     q = marklogic.queryBuilder,
-    p = marklogic.patchBuilder;
+    p = marklogic.patchBuilder,
+    _ = require('lodash');
 
 var selectAll = function selectAll(callback) {
     var docs = [];
@@ -38,27 +39,25 @@ var selectImageData = function selectImageData(uri, callback) {
 };
 
 var patchDocument = function(uri, update, callback) {
-    db.documents.read('/image/' + uri + '.json').result().
-    then(function(document) {
-        if (document[0].content.title) {
-            db.documents.patch('/image/' + uri + '.json',
-                p.pathLanguage('jsonpath'),
-                p.replace('$.title', update)
-            ).result().
-            then(function(response) {
-                callback(response);
-            });        
-        } else {
-            db.documents.patch('/image/' + uri + '.json',
-                p.pathLanguage('jsonpath'),
-                p.replaceInsert('$.title', '$.filename', 'after', {title: update})
-            ).result().
-            then(function(response) {
-                callback(response);
+    db.documents.read('/image/' + uri + '.json')
+        .result()
+        .then(function(document) {
+            var oldDocument = document[0].content;
+            if (oldDocument.title === 'undefined') {
+                oldDocument.title = update; 
+            } else {
+                oldDocument['title'] = update;
+                var newDocument = oldDocument;
+            }
+
+            return db.documents.write({
+                uri: document[0].uri,
+                collection: 'image',
+                content: newDocument
+            }).result(function (response) {
+                callback(newDocument);
             });
-        }
-    });
-    
+        });
 };
 
 var geoSearch = function search (object, callback) {

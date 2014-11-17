@@ -15,8 +15,6 @@
  */
 var valcheck = require('core-util-is');
 
-var mlutil   = require('./mlutil.js');
-
 /**
  * A helper for building the definition of a document patch. The helper is
  * created by the {@link module:marklogic.patchBuilder} function. 
@@ -30,8 +28,7 @@ var mlutil   = require('./mlutil.js');
 
 /**
  * Builds an operation to remove a JSON property or XML element or attribute.
- * @method
- * @memberof patchBuilder#
+ * @method patchBuilder#
  * @param {string}  select - the path to select the fragment to remove
  * @param {string}  [cardinality] - a specification from the ?|.|*|+
  * enumeration controlling whether the select path must match zero-or-one
@@ -50,7 +47,7 @@ function remove() {
       select = arg;
       continue;
     }
-    if (cardinality === null && /^[?.*+]$/.test(arg)) {
+    if (cardinality === null && arg.match(/^[?.*+]$/)) {
       cardinality = arg;
       continue;
     }
@@ -73,8 +70,7 @@ function remove() {
 
 /**
  * Builds an operation to insert content.
- * @method
- * @memberof patchBuilder#
+ * @method patchBuilder#
  * @param {string}  context - the path to the container of the inserted content
  * @param {string}  position - a specification from the before|after|last-child
  * enumeration controlling where the content will be inserted relative to the context
@@ -100,11 +96,11 @@ function insert() {
     }
     var isString = valcheck.isString(arg);
     if (isString) {
-      if (position === null && /^(before|after|last-child)$/.test(arg)) {
+      if (position === null && arg.match(/^(before|after|last-child)$/)) {
         position = arg;
         continue;
       }
-      if (cardinality === null && /^[?.*+]$/.test(arg)) {
+      if (cardinality === null && arg.match(/^[?.*+]$/)) {
         cardinality = arg;
         continue;
       }
@@ -153,18 +149,13 @@ function insert() {
 function library(module) {
   if (valcheck.isNullOrUndefined(module)) {
     throw new Error(
-        'library must name the module that defines the apply functions'
+        'library takes the name of a module defining the apply functions'
         );
   }
 
-  var rootname = mlutil.rootname(module);
-  if (rootname === null) {
-    throw new Error('library must have an extension of .xqy');
-  }
-
   return {'replace-library':{
-    ns:  'http://marklogic.com/patch/apply/'+rootname,
-    at: '/ext/marklogic/patch/apply/'+module
+    ns: '/ext/marklogic/patch/apply/'+module,
+    at: '/ext/marklogic/patch/apply/'+module+'.xqy'
   }};
 }
 
@@ -348,8 +339,7 @@ function replaceRegex(match, replace, flags) {
 
 /**
  * Builds an operation to replace a JSON property or XML element or attribute.
- * @method
- * @memberof patchBuilder#
+ * @method patchBuilder#
  * @param {string}  select - the path to select the fragment to replace
  * @param           [content] - the object or value replacing the selected fragment or
  * an {@link patchBuilder.ApplyDefinition} specifying a function to apply to the selected
@@ -374,7 +364,7 @@ function replace() {
       continue;
     }
     var isString = valcheck.isString(arg);
-    if (isString && cardinality === null && /^[?.*+]$/.test(arg)) {
+    if (isString && cardinality === null && arg.match(/^[?.*+]$/)) {
       cardinality = arg;
       continue;
     }
@@ -385,6 +375,9 @@ function replace() {
         continue;
       }
     }
+    console.log('content: ', content);
+    console.log('arg: ', arg);
+    console.log('typeof ' + typeof arg);
     if (content === null) {
       content = arg;
       continue;
@@ -408,8 +401,8 @@ function replace() {
   if (!valcheck.isNullOrUndefined(apply)) {
     operation.apply = apply;
   }
-
-  return {replace: operation};
+  return console.log(operation);
+  //return {replace: operation};
 }
 
 /**
@@ -417,8 +410,7 @@ function replace() {
  * the new content if the fragment doesn't exist.
  * The content argument is optional if an apply argument is provided and
  * required otherwise.
- * @method
- * @memberof patchBuilder#
+ * @method patchBuilder#
  * @param {string}  select - the path to select the fragment to replace
  * @param {string}  context - the path to the container for inserting the content
  * when the select path doesn't match
@@ -455,11 +447,11 @@ function replaceInsert() {
     }
     var isString = valcheck.isString(arg);
     if (isString) {
-      if (position === null && /^(before|after|last-child)$/.test(arg)) {
+      if (position === null && arg.match(/^(before|after|last-child)$/)) {
         position = arg;
         continue;
       }
-      if (cardinality === null && /^[?.*+]$/.test(arg)) {
+      if (cardinality === null && arg.match(/^[?.*+]$/)) {
         cardinality = arg;
         continue;
       }
@@ -471,7 +463,11 @@ function replaceInsert() {
         continue;
       }
     }
+    console.log('content: ', content);
+    console.log('arg: ', arg);
+    console.log('typeof ' + typeof arg);
     if (content === null) {
+      if (typeof content === 'object')
       content = arg;
       continue;
     }
@@ -497,8 +493,15 @@ function replaceInsert() {
   if (!valcheck.isNullOrUndefined(apply)) {
     operation.apply = apply;
   }
-
-  return {'replace-insert': operation};
+  return console.log(operation);
+  //return {'replace-insert': operation};
+  //console.log(operation);
+  // console.log(select);
+  // console.log(context);
+  // console.log(position);
+  // console.log(content);
+  // console.log(cardinality);
+  // console.log(apply);
 }
 
 /**
