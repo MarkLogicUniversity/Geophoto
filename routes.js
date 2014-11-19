@@ -162,7 +162,7 @@ var apiadd = function(req, res) {
 };
 
 /* wrapper function for the geospatial search */
-/
+
 var apisearch = function(req, res) {
     var radius = req.params.radius,
     lat        = req.params.lat,
