@@ -9,9 +9,9 @@ it looks for the $location.path() value and applies the active CSS class if the 
 There's a small trick here:
     var path = $location.path().substring(1);
     return url === path ? "active" : "";
-would only match first class URLs such as /characters and /books
+would only match first class URLs such as /maps and /explorer
 
-What about /characters/darthvader? It should still put the active class to the 'Characters' menu. If path contains / then slice the array and get the first path (==-'characters') and this will set the active flag to be true
+What about something like /maps/item? It should still put the active class to the 'Characters' menu. If path contains / then slice the array and get the first path ( === 'maps') and this will set the active flag to be true
 */
 app.controller('NavController', ['$scope', '$location',
     function($scope, $location) {
@@ -26,6 +26,8 @@ app.controller('NavController', ['$scope', '$location',
     }
     ]);
 
+/* The map controller is responsible for handling the display of the map. It uses the PhotoService to retrieve all the photos from the database */
+
 app.controller('MapController', ['$scope', 'PhotoService',
     function($scope, PhotoService) {
         var infoWindow = new google.maps.InfoWindow(),
@@ -33,51 +35,59 @@ app.controller('MapController', ['$scope', 'PhotoService',
         tmpMarkers = [],
         percentage = 0;
 
+        // map options such as the initial coordinates and the zoom level
         var mapOptions = {
             zoom: 2,
             center: new google.maps.LatLng(10, 0),
             mapTypeId: google.maps.MapTypeId.ROAD
         };
 
-        // creating map
+        // assign the map to the $scope (note mapOptions)
         $scope.map = new google.maps.Map(document.getElementById('map'), mapOptions);
 
+        // creating an array for the markers on $scope
         $scope.markers = [];
-        
+
         // function to create marker on the map
         var createMarker = function(data, max) {
+          // every marker has to have a latitude, longitude and a title
             var latitude = data.location.coordinates[0],
-            longitude = data.location.coordinates[1],
-            title = '';
+            longitude    = data.location.coordinates[1];
 
+            // the title of the marker is either going to be the title (which is a JSON key, if available) or the actual name of the file (which should be the case after the initial data load)
             var title = data.title || data.filename;
 
+            /* creating a marker. Each marker has to have a map associated with it as well as a position.
+            the position information is extracted out from the NoSQL database. The marker also has to have a unique ID which, in our case, is the name of the file.
+            */
             var marker = {
                 map: $scope.map,
                 position: new google.maps.LatLng(latitude, longitude),
                 title: title,
                 id: data.filename,
             };
-            
+
+            /*the showImage function retrieves a binary stream of data representing the image itself which is then added to the <img> tag using the data-uri (data:image/jpg;base64) format
+            */
             PhotoService.showImage(marker.id).success(function(d) {
                 marker['binary'] = d[0];
                 marker['content'] = '<div class="infoWindowContent"><img src="data:image/jpg;base64,' + marker.binary + '"></div>';
 
-               // place marker
+               // place marker on the map
+               marker = new google.maps.Marker(marker);
 
-               marker = new google.maps.Marker(marker);    
-
-               google.maps.event.addListener(marker, 'click', function(){
+               // markers can also have event listeners such as 'click'
+               google.maps.event.addListener(marker, 'click', function() {
                 infoWindow.setContent('<div class="infoWindowHeader"><h3>' + marker.title + '</h3><p><a href="#/edit/'+marker.id+'">edit</a></p></div>' + marker.content);
                 infoWindow.open($scope.map, marker);
             });
+              // helper variable to display percentage bar
+              numberOfCalls++;
 
-               numberOfCalls++;
-
-               if (numberOfCalls === max) {
+              if (numberOfCalls === max) {
                 $scope.markers = tmpMarkers;
                 $scope.markers.message = '';
-            } else {
+              } else {
                 tmpMarkers.push(marker);
                 percentage = Math.round(numberOfCalls / max * 100);
                 $scope.markers.message = 'Loading markers, please wait ...';
@@ -86,22 +96,21 @@ app.controller('MapController', ['$scope', 'PhotoService',
         });
 };
 
-PhotoService.showAll().success(function(data) {
-    for (var i = 0; i < data.length; i++) {
-        createMarker(data[i], data.length);
-    }
-});
+  /*
+  showAll() retrieves all photos and calls the createMarker function to display each photo as a marker on the map
+  */
+  PhotoService.showAll().success(function(data) {
+      for (var i = 0; i < data.length; i++) {
+          createMarker(data[i], data.length);
+      }
+  });
 
-$scope.openInfoWindow = function(e, selectedMarker) {
-    e.preventDefault();
-    google.maps.event.trigger(selectedMarker, 'click');
-};
+  //this function triggers the click event that will open an info window for the marker clicked
+  $scope.openInfoWindow = function(e, selectedMarker) {
+      e.preventDefault();
+      google.maps.event.trigger(selectedMarker, 'click');
+  };
 
-$scope.edit = function(id) {
-    PhotoService.showOne(id).success(function(data) {
-        console.log(data);
-    });
-};
 }
 ]);
 
@@ -115,7 +124,7 @@ app.controller('MapSearchController', ['$scope', 'PhotoService',
         // creating map
         $scope.map = new google.maps.Map(document.getElementById('map'), mapOptions);
 
-        // Geo drawer
+        // Initialising a google drawing manager
         var drawingManager = new google.maps.drawing.DrawingManager({
             //drawingMode: google.maps.drawing.OverlayType.MARKER,
             drawingControl: true,
@@ -136,13 +145,11 @@ app.controller('MapSearchController', ['$scope', 'PhotoService',
       });
         drawingManager.setMap($scope.map);
         var circle;
-        
+
         google.maps.event.addListener(drawingManager, 'circlecomplete', onCircleComplete);
-        
 
         //cirlce event listener
         function onCircleComplete(shape) {
-            console.log('called');
             if (shape == null || (!(shape instanceof google.maps.Circle))) return;
 
             if (circle != null) {
@@ -169,8 +176,6 @@ app.controller('MapSearchController', ['$scope', 'PhotoService',
                     lat: lat,
                     lng: lng
                 };
-                console.log('radius changed');
-
                 // initiate the search again
                 geoSearch(search);
             }
@@ -186,21 +191,12 @@ app.controller('MapSearchController', ['$scope', 'PhotoService',
                     lat: lat,
                     lng: lng
                 };
-                console.log('center moved');
 
                 // initiate the search again
                 geoSearch(search);
             }
-
             geoSearch(search);
-
-            // console.log('radius : ', circle.getRadius());
-            // console.log('radius in miles: ', Math.round(circle.getRadius() * 0.000621371192));
-            // console.log('lat', circle.getCenter().lat());
-            // console.log('lng', circle.getCenter().lng());
         }
-
-        
 
         var geoSearch = function search (object) {
             PhotoService.search(object).success(function (data) {
@@ -223,7 +219,7 @@ app.controller('PhotoController', ['$scope', '$routeParams', '$location', '$rout
             $scope.image.title = data[0].title || data[0].filename;
         })
         .error(function (data, status, headers, config) {
-            console.log(data); 
+            console.log(data);
         });
 
         $scope.update = function() {

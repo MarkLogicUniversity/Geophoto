@@ -1,5 +1,6 @@
 'use strict';
 var app = angular.module('geofoto.service', []);
+//
 app.service('PhotoService', ['$http',
     function($http) {
         return {
@@ -21,8 +22,8 @@ app.service('PhotoService', ['$http',
         }
     }
 ]);
-
-app.factory('httpRequestInterceptor', ['$q', '$location', 
+//
+app.factory('httpRequestInterceptor', ['$q', '$location',
     function ($q, $location) {
         return {
             'response': function (response) {

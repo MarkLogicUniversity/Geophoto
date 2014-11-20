@@ -3,7 +3,7 @@
   .row
   .col-sm-12.col-md-12
     .thumbnail
-      img(ng-src='{{ image.binaryData }}', width='500px', class='img-rounded')
+      img(ng-src='{{ image.binaryData }}', width='600px', class='img-rounded')
       .caption
         h3(ng-click='editable = "title"', ng-hide='editable === "title"') {{ image.title }}
         span(ng-show='editable === "title"')

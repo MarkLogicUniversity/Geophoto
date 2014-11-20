@@ -16,6 +16,9 @@ body {
   padding: 40px 15px;
   text-align: center;
 }
+.centre {
+  text-align: center;
+}
 #map {
     height:450px;
     margin-top: 10px;

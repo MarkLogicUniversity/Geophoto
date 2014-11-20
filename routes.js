@@ -189,6 +189,8 @@ var partials = function partials(req, res) {
     res.render('partials/' + name);
 };
 
+/* making both the app and api functions available via exports
+*/
 module.exports = {
     app: {
         index: appindex,

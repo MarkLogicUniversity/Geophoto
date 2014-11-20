@@ -6,27 +6,27 @@
  * Takes a path as the first argument and gathers all
  * JPEG images (Exif is onlysupported in JPEG  and TIFF images
  * (JPEG 2000, png and gif are *not* supported))
- * 
+ *
  * The GPS data is stored as an array of numbers - e.g.:
  * GPSLatitude: [ 10, 25, 22.682 ] - these numbers represent degrees,
  * minutes and seconds. In order for databases to understand these values
  * they need to be converted to decimal numbers.
- * 
+ *
  * If the GPSLatitudeRef is South (or in other words, if the
  * Latitude Degree is between 0 and -90) the sign of the decimal
  * number changes. Also, if the GPSLongitudeRef is West
  * (or again, if the Longitude Degree is between 0 and -180) the sign of
  * the decimal number changes.
- * 
+ *
  * Here's a very basic system to help you visualise the sign change:
  *      N (+)
  *  E (+)   W (-)
  *      S  (-)
- *      
+ *
  * The Exif information is extracted using
  * this node module: https://github.com/gomfunkel/node-exif
- * 
- * TODO:
+ *
+ * TODO: (homework?)
  *  - check for already existing image in db
  *  - add index after all data has been loaded
  *  - stop listening for events when all data has been loaded
@@ -65,19 +65,6 @@ var fs = require('fs'),
         }).result(function (response) {
             console.log('Successfully inserted ', response.documents[0].uri);
         });
-        
-        // var ws = db.documents.createWriteStream({
-        //     uri: '/binary/' + data.filename,
-        //     contentType: 'image/jpeg'
-        // });
-
-        // ws.result(function (response) {
-        //     console.log('Successfully inserted', response)
-        // });
-
-        // fs.createReadStream(file).pipe(ws);
-        
-        
     }
 
     // function to convert degrees, minutes and seconds to decimal values
@@ -149,7 +136,7 @@ var fs = require('fs'),
      *
      */
     var getGPSInfo = function getGPSInfo(loc, callback) {
-        
+
         // if the supplied first argument is a directory, loop through it
         if (typeof loc === 'object') {
             loc.forEach(function(file) {
@@ -170,7 +157,7 @@ var fs = require('fs'),
                             location.latitudeReference = gpsData.GPSLatitudeRef;
                             location.longitude = gpsData.GPSLongitude;
                             location.longitudeReference = gpsData.GPSLongitudeRef;
-                            
+
                             var extractedLocation = extractAndConvertGPSData(location);
                             var filenameInDatabase = file.split('/').pop();
                             callback({
@@ -271,6 +258,5 @@ var fs = require('fs'),
             process.exit(1);
         }
     }
-
     // run the app
     importProcess();

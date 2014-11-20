@@ -3,6 +3,10 @@ var app = angular.module('geofoto', ['ngRoute', 'geofoto.controller', 'geofoto.s
 
 app.config(['$routeProvider', '$httpProvider', function($routeProvider, $httpProvider) {
   $httpProvider.interceptors.push('httpRequestInterceptor');
+
+  /* standard AngularJS route configuration
+  note that the 404 errors are handled by an HTTP interceptor
+  */
   
   $routeProvider
       .when('/', {
