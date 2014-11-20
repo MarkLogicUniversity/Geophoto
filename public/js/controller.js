@@ -114,6 +114,9 @@ app.controller('MapController', ['$scope', 'PhotoService',
 }
 ]);
 
+/* Map Search takes advantage of the google maps Drawing Manager
+note that the radius specified by the Google Maps API is a valu in meters that need to be converted to miles
+*/
 app.controller('MapSearchController', ['$scope', 'PhotoService',
     function($scope, PhotoService) {
         var mapOptions = {
@@ -146,6 +149,7 @@ app.controller('MapSearchController', ['$scope', 'PhotoService',
         drawingManager.setMap($scope.map);
         var circle;
 
+        // adding an event listener (https://developers.google.com/maps/documentation/javascript/examples/circle-simple)
         google.maps.event.addListener(drawingManager, 'circlecomplete', onCircleComplete);
 
         //cirlce event listener
@@ -166,6 +170,8 @@ app.controller('MapSearchController', ['$scope', 'PhotoService',
                 lat: lat,
                 lng: lng
             };
+
+            // radius_changed event listener (https://developers.google.com/maps/documentation/javascript/shapes)
             google.maps.event.addListener(shape, 'radius_changed', onCircleChanged);
             function onCircleChanged() {
                 var radius = Math.round(circle.getRadius() * 0.000621371192);
@@ -180,6 +186,7 @@ app.controller('MapSearchController', ['$scope', 'PhotoService',
                 geoSearch(search);
             }
 
+            // center_changed event listener
             google.maps.event.addListener(shape, 'center_changed', onPointChanged);
 
             function onPointChanged() {
@@ -206,6 +213,9 @@ app.controller('MapSearchController', ['$scope', 'PhotoService',
     }
     ]);
 
+/*
+The PhotController is responsible for allowing people to edit the photos
+*/
 app.controller('PhotoController', ['$scope', '$routeParams', '$location', '$route', 'PhotoService',
     function($scope, $routeParams, $location, $route, PhotoService) {
         $scope.editable = '';

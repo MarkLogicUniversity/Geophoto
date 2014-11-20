@@ -1,6 +1,7 @@
 'use strict';
 var app = angular.module('geofoto.service', []);
-//
+
+// PhotoService is an AngularJS Service that communicates with the backend API
 app.service('PhotoService', ['$http',
     function($http) {
         return {
@@ -22,7 +23,8 @@ app.service('PhotoService', ['$http',
         }
     }
 ]);
-//
+
+// httpRequestInterceptor to handle the 404 error messages sent back from the backend
 app.factory('httpRequestInterceptor', ['$q', '$location',
     function ($q, $location) {
         return {

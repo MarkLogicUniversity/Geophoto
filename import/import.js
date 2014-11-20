@@ -20,7 +20,7 @@
  *
  * Here's a very basic system to help you visualise the sign change:
  *      N (+)
- *  E (+)   W (-)
+ *  W (-)   E (+)
  *      S  (-)
  *
  * The Exif information is extracted using
