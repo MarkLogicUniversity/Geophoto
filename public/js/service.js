@@ -30,7 +30,7 @@ app.factory('httpRequestInterceptor', ['$q', '$location',
                 return response;
             },
             'responseError': function (rejection) {
-                if(rejection.status === 404) {
+                if (rejection.status === 404) {
                     $location.path('/404');
                 }
                 return $q.reject(rejection);
