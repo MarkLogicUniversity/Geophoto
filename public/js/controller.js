@@ -214,7 +214,7 @@ app.controller('MapSearchController', ['$scope', 'PhotoService',
     ]);
 
 /*
-The PhotController is responsible for allowing people to edit the photos
+The PhotoController is responsible for allowing people to edit the photos
 */
 app.controller('PhotoController', ['$scope', '$routeParams', '$location', '$route', 'PhotoService',
     function($scope, $routeParams, $location, $route, PhotoService) {
@@ -236,7 +236,9 @@ app.controller('PhotoController', ['$scope', '$routeParams', '$location', '$rout
             var title = $scope.image.newtitle;
             if (title) {
                 PhotoService.add($scope.image.filename, title).success(function (data) {
-                    $route.reload();
+                  if (data === '200') {
+                    $scope.image.title = title;
+                  }
                 });
             }
         };
