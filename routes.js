@@ -1,7 +1,7 @@
 'use strict';
 
 // route handler for the API
-var marklogic  =require('./node-client-api/lib/marklogic.js'),
+var marklogic  = require('marklogic'),
     connection = require('./dbsettings').connection,
     db         = marklogic.createDatabaseClient(connection),
     qb         = marklogic.queryBuilder,
