@@ -66,26 +66,38 @@ var selectImageData = function selectImageData(uri, callback) {
 the title of an image.
 */
 var updateDocument = function(uri, update, callback) {
-    db.documents.read('/image/' + uri + '.json')
-        .result()
-        .then(function(document) {
-            var oldDocument = document[0].content;
-            if (oldDocument.title === 'undefined') {
-                oldDocument.title = update;
-            } else {
-                oldDocument['title'] = update;
-                var newDocument = oldDocument;
-            }
-
-            return db.documents.write({
-                uri: document[0].uri,
-                collections: ['image'],
-                content: newDocument
-            }).result(function (response) {
-                callback(newDocument);
-            });
-        });
-};
+  var newDocument = {};
+  db.documents.read('/image/' + uri + '.json')
+    .result()
+    .then(function(document) {
+      document[0].content.title = update;
+      newDocument = document[0].content;
+      return db.documents.write(document[0]).result();
+    })
+    .then(function(document) {
+      callback(newDocument);
+    });
+    // db.documents.read('/image/' + uri + '.json')
+    //   .result()
+    //   .then(function(document) {
+    //       var oldDocument = document[0].content;
+    //       if (oldDocument.title === 'undefined') {
+    //           oldDocument.title = update;
+    //       } else {
+    //           oldDocument['title'] = update;
+    //           var newDocument = oldDocument;
+    //       }
+    //
+    //       return db.documents.write({
+    //           uri: document[0].uri,
+    //           collections: ['image'],
+    //           content: newDocument
+    //       })
+    //         .result(function (response) {
+    //           callback(newDocument);
+    //         });
+    //   });
+  };
 
 /* This function is responsible for doing a geospatial search
 
