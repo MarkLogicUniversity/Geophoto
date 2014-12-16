@@ -3,14 +3,15 @@
   .row
   .col-sm-12.col-md-12
     .thumbnail
-      img(ng-src='{{ image.binaryData }}', width='600px', class='img-rounded')
+      img(ng-src='{{ vm.image.binaryData }}', width='600px', class='img-rounded')
       .caption
-        h3(ng-click='editable = "title"', ng-hide='editable === "title"') {{ image.title }}
-        span(ng-show='editable === "title"')
+        h3(ng-click='vm.editable = "title"', ng-hide='vm.editable === "title"') {{ vm.image.title }}
+        textarea(class="form-control", rows="3", placeholder="Photo description", ng-model="vm.image.description")
+        span(ng-show='vm.editable === "title"')
           form.form-inline(name='titleForm')
             .form-group
-              input.form-control(type='text', required='', ng-model='image.newtitle', size='{{ image.newtitle.length }}', name='newtitle')
-              button.btn.btn-success(ng-click='update(); editable = ""') Ok
-              button.btn.btn-warning(ng-click='editable = ""') Cancel
-        p {{ image.description }}
-        p #[strong Latitude]: {{ image.location.coordinates[0] }} | #[strong Longitude]: {{ image.location.coordinates[1] }}
+              input.form-control(type='text', required='', ng-model='vm.image.newtitle', size='{{ vm.image.newtitle.length }}', name='newtitle')
+              button.btn.btn-success(ng-click='vm.update(); vm.editable = ""') Ok
+              button.btn.btn-warning(ng-click='vm.editable = ""') Cancel
+        p {{ vm.image.description }}
+        p #[strong Latitude]: {{ vm.image.location.coordinates[0] }} | #[strong Longitude]: {{ vm.image.location.coordinates[1] }}

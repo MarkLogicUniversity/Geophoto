@@ -66,37 +66,23 @@ var selectImageData = function selectImageData(uri, callback) {
 the title of an image.
 */
 var updateDocument = function(uri, update, callback) {
+  update = JSON.parse(update);
+  var title = update.title;
+  var description = update.description;
   var newDocument = {};
   db.documents.read('/image/' + uri + '.json')
     .result()
     .then(function(document) {
-      document[0].content.title = update;
+      document[0].content.title = title;
+      if(description) {
+        document[0].content.description = description;
+      }
       newDocument = document[0].content;
       return db.documents.write(document[0]).result();
     })
     .then(function(document) {
       callback(newDocument);
     });
-    // db.documents.read('/image/' + uri + '.json')
-    //   .result()
-    //   .then(function(document) {
-    //       var oldDocument = document[0].content;
-    //       if (oldDocument.title === 'undefined') {
-    //           oldDocument.title = update;
-    //       } else {
-    //           oldDocument['title'] = update;
-    //           var newDocument = oldDocument;
-    //       }
-    //
-    //       return db.documents.write({
-    //           uri: document[0].uri,
-    //           collections: ['image'],
-    //           content: newDocument
-    //       })
-    //         .result(function (response) {
-    //           callback(newDocument);
-    //         });
-    //   });
   };
 
 /* This function is responsible for doing a geospatial search
@@ -164,7 +150,7 @@ var apiimagedata = function(req, res) {
 };
 
 /* wrapper function to update a document's title */
-var apiadd = function(req, res) {
+var apiupdate = function(req, res) {
     var id = req.params.id;
     var update = req.params.update;
     updateDocument(id, update, function (data) {
@@ -212,7 +198,7 @@ module.exports = {
         index: apiindex,
         image: apiimage,
         imagedata: apiimagedata,
-        add: apiadd,
+        update: apiupdate,
         search: apisearch
     }
 };

@@ -1,7 +1,7 @@
-.navbar.navbar-default.navbar-fixed-top(role='navigation', ng-controller='NavController')
+.navbar.navbar-default.navbar-fixed-top(role='navigation', ng-controller='NavigationController')
   .container
     .navbar-header
-      button.navbar-toggle(type='button', data-toggle='collapse', data-target='.navbar-collapse', ng-controller='NavController')
+      button.navbar-toggle(type='button', data-toggle='collapse', data-target='.navbar-collapse')
         span.sr-only Toggle navigation
         span.icon-bar
         span.icon-bar
@@ -9,13 +9,13 @@
       a.navbar-brand(href='/') Geophoto
     .collapse.navbar-collapse
       ul.nav.navbar-nav
-        li(ng-class='isActive("")')
+        li(ng-class='vm.isActive("#")')
           a(href='/') Home
-        li(ng-class='isActive("map")')
+        li(ng-class='vm.isActive("map")')
           a(href='#/map') Map
-        li(ng-class='isActive("mapsearch")')
-          a(href='#/mapsearch') Map Search
-        li(ng-class='isActive("explorer")')
+        li(ng-class='vm.isActive("geosearch")')
+          a(href='#/geosearch') Geo Search
+        li(ng-class='vm.isActive("explorer")')
           a(href='#/explorer') Api Explorer
-        li(ng-class='isActive("import")')
+        li(ng-class='vm.isActive("import")')
           a(href='#/import') Import photos

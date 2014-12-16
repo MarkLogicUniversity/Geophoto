@@ -1,11 +1,11 @@
 .container
   div
     #map
-    div.progress(ng-show='markers.message')
-        div.progress-bar.progress-bar-info(role='progressbar', aria-valuenow='{{markers.percentage}}', aria-valuemin='100', aria-valuemax='100', style='width: {{markers.percentage}}%;') {{ markers.percentage }}%
-    p(ng-show='markers.message') {{ markers.message }}
-    .row(class='fixed',ng-hide='markers.message')
-        .col-sm-3.col-md-3(ng-repeat='marker in markers')
+    div.progress(ng-show='vm.markers.message')
+        div.progress-bar.progress-bar-info(role='progressbar', aria-valuenow='{{vm.markers.percentage}}', aria-valuemin='100', aria-valuemax='100', style='width: {{vm.markers.percentage}}%;') {{ vm.markers.percentage }}%
+    p(ng-show='vm.markers.message') {{ vm.markers.message }}
+    .row(class='fixed',ng-hide='vm.markers.message')
+        .col-sm-3.col-md-3(ng-repeat='marker in vm.markers')
             p
                 a(href='#', ng-click='openInfoWindow($event, marker)', role='button', class='btn btn-sm btn-default') {{ marker.title | limitTo: 12 }} 
                     i.glyphicon(class='glyphicon-search')
