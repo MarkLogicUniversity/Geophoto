@@ -78,7 +78,9 @@ var updateDocument = function(uri, update, callback) {
         document[0].content.description = description;
       }
       newDocument = document[0].content;
-      return db.documents.write(document[0]).result();
+      document[0].collections = ['image'];
+      return db.documents.write(document[0])
+        .result();
     })
     .then(function(document) {
       callback(newDocument);
@@ -108,7 +110,7 @@ var geoSearch = function search (object, callback) {
         ).result(function(documents) {
             documents.forEach(function (document) {
                 docs.push(document.content);
-            })
+            });
             callback(docs);
         });
 };

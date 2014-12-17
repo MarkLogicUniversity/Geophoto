@@ -33,12 +33,11 @@
  *  - recursive folder navigation
  */
 
-var fs = require('fs'),
-    ExifImage = require('exif').ExifImage,
-    marklogic =require('marklogic'),
-    connection = require('./../dbsettings').connection,
-    db = marklogic.createDatabaseClient(connection),
-    q = marklogic.queryBuilder;
+var    fs         = require('fs');
+var    ExifImage  = require('exif-makernote-fix').ExifImage;
+var    marklogic  =require('marklogic');
+var    connection = require('./../dbsettings').connection;
+var    db         = marklogic.createDatabaseClient(connection);
 
     // function to insert data into the database
     var insertData = function insertData(data, path) {
@@ -144,6 +143,10 @@ var fs = require('fs'),
                 // convert the content of the image file to binary
                 // this is later used in HTML as <img src="data:image/jpg;base64,[binary]>
                 // var binary = new Buffer(fs.readFileSync(file), 'binary').toString('base64');
+                // testing:
+                // console.log(exifData.image.Make);
+                // console.log(exifData.image.Model);
+                // console.log(exifData.image.ModifyDate);
                 new ExifImage({ image: file}, function(error, exifData) {
                     if (error) {
                         console.log('Error with ExifImage library: ' + error);
@@ -166,6 +169,9 @@ var fs = require('fs'),
                                     type: 'Point',
                                     coordinates: [extractedLocation.latitude, extractedLocation.longitude]
                                 },
+                                make: exifData.image.Make,
+                                model: exifData.image.Model,
+                                created: exifData.image.ModifyDate,
                                 binary: '/binary/' + filenameInDatabase
                             });
                             console.log('Successfully extracted GPS information from ' + file);
@@ -194,13 +200,16 @@ var fs = require('fs'),
                         location.longitude = gpsData.GPSLongitude;
                         location.longitudeReference = gpsData.GPSLongitudeRef;
                         var extractedLocation = extractAndConvertGPSData(location);
-                        var filenameInDatabase = loc.split('/').pop();;
+                        var filenameInDatabase = loc.split('/').pop();
                         callback({
                             filename: filenameInDatabase,
                             location: {
                                 type: 'Point',
                                 coordinates: [extractedLocation.latitude, extractedLocation.longitude]
                             },
+                            make: exifData.image.Make,
+                            model: exifData.image.Model,
+                            created: exifData.image.ModifyDate,
                             binary: '/binary/' + filenameInDatabase
                         });
                         console.log('Successfully extracted GPS information from ' + loc);
