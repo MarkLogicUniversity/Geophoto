@@ -12,7 +12,8 @@
         showOnePhoto: showOnePhoto,
         showImage: showImage,
         update: update,
-        geoSearch: geoSearch
+        geoSearch: geoSearch,
+        textSearch: textSearch
       };
 
       function showAllPhotos() {
@@ -47,6 +48,13 @@
       function geoSearch(object) {
         return $http
           .get('/api/image/search/' + object.radius + '/' + object.lat + '/' + object.lng)
+          .then(complete)
+          .catch(failed);
+      }
+
+      function textSearch(term) {
+        return $http
+          .get('/api/image/search/' + term)
           .then(complete)
           .catch(failed);
       }

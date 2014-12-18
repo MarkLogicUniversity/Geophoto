@@ -1,20 +1,30 @@
 .container
-  h1 Edit
-  .row
-  .col-sm-12.col-md-12
-    .thumbnail
-      img(ng-src='{{ vm.image.binaryData }}', width='600px', class='img-rounded')
-      .caption
-        h3(ng-click='vm.editable = "title"', ng-hide='vm.editable === "title"') {{ vm.image.title }}
-        textarea(class="form-control", rows="3", placeholder="Photo description", ng-model="vm.image.description")
-        span(ng-show='vm.editable === "title"')
-          form.form-inline(name='titleForm')
-            .form-group
-              input.form-control(type='text', required='', ng-model='vm.image.newtitle', size='{{ vm.image.newtitle.length }}', name='newtitle')
-              button.btn.btn-success(ng-click='vm.update(); vm.editable = ""') Ok
-              button.btn.btn-warning(ng-click='vm.editable = ""') Cancel
-        p {{ vm.image.description }}
-        p {{ vm.image.make }}
-        p {{ vm.image.model }}
-        p {{ vm.image.created }}
-        p #[strong Latitude]: {{ vm.image.location.coordinates[0] }} | #[strong Longitude]: {{ vm.image.location.coordinates[1] }}
+  .padded
+    .panel.panel-info
+      .panel-heading
+        h3.panel-title You are viewing "{{ vm.image.title || vm.image.filename }}"
+      .panel-body
+        .row
+          .col-md-6
+            .thumbnail
+              img(ng-src='{{ vm.image.binaryData }}', class='img-rounded')
+          .col-md-6
+            .caption
+              h3(ng-click='vm.editable = "title"', ng-hide='vm.editable === "title"') {{ vm.image.title }}
+              span(ng-show='vm.editable === "title"')
+                form.form-inline(name='titleForm')
+                  .form-group
+                    input.form-control(type='text', required='', ng-model='vm.image.newtitle', size='{{ vm.image.newtitle.length }}', name='newtitle')
+                    button.btn.btn-success(ng-click='vm.updateTitle(); vm.editable = ""') Save
+                    button.btn.btn-warning(ng-click='vm.editable = ""') Cancel
+              p.description(ng-click='vm.editable = "description"', ng-hide='vm.editable === "description"') {{ vm.image.description || 'No description yet' }}
+              span(ng-show='vm.editable === "description"')
+                form.form-inline(name='descriptionForm')
+                  .form-group
+                    textarea(class='form-control', rows="3", cols='80', placeholder='Photo description', ng-model='vm.image.description')
+                    button.btn.btn-success(ng-click='vm.updateDescription(); vm.editable = ""') Save
+                    button.btn.btn-warning(ng-click='vm.editable = ""') Cancel
+              hr
+              p #[strong Make and model]: {{ vm.image.make }} {{ vm.image.model }}
+              p #[strong Created on]: {{ vm.image.created | date: 'dd MMM yyyy @ H m s'  }}
+              p #[strong Latitude]: {{ vm.image.location.coordinates[0] }} | #[strong Longitude]: {{ vm.image.location.coordinates[1] }}

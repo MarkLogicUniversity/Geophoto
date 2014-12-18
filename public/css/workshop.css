@@ -19,6 +19,9 @@ body {
 .centre {
   text-align: center;
 }
+.padded {
+  padding-top: 10px;
+}
 #map {
     height:450px;
     margin-top: 10px;
@@ -38,6 +41,18 @@ body {
     border-top: 1px solid #ccc;
     padding-top: 10px;
     display: block;
+}
+.thumbnail {
+  border: 0px;
+}
+.img-rounded {
+  width: 600px;
+}
+.description {
+  background: #eee;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
 }
 .infoWindowContent img {
   width: 300px;

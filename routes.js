@@ -30,7 +30,7 @@ e.g.
 var selectAll = function selectAll(callback) {
     var docs = [];
     db.documents.query(qb.where(qb.collection('image')).slice(0,300)).result(function(documents) {
-        documents.forEach(function (document) {
+        documents.forEach(function(document) {
             docs.push(document.content);
         });
         callback(docs);
@@ -67,14 +67,16 @@ the title of an image.
 */
 var updateDocument = function(uri, update, callback) {
   update = JSON.parse(update);
-  var title = update.title;
   var description = update.description;
   var newDocument = {};
   db.documents.read('/image/' + uri + '.json')
     .result()
     .then(function(document) {
-      document[0].content.title = title;
-      if(description) {
+      if (update.title) {
+        var title = update.title;
+        document[0].content.title = title;
+      }
+      if (description) {
         document[0].content.description = description;
       }
       newDocument = document[0].content;
@@ -93,7 +95,7 @@ Geospatial search in MarkLogic uses a geo object (in thise case a geo path)
 and it also has support for 4 geospatial types. We have circle, square, polygon
 and point. In this function we are using the geospatial circle
 */
-var geoSearch = function search (object, callback) {
+var geoSearch = function search(object, callback) {
     var docs = [],
     radius   = parseInt(object.radius),
     lat      = parseFloat(object.lat),
@@ -108,11 +110,25 @@ var geoSearch = function search (object, callback) {
                 )
             ).slice(0,300).withOptions({categories:['content']})
         ).result(function(documents) {
-            documents.forEach(function (document) {
+            documents.forEach(function(document) {
                 docs.push(document.content);
             });
             callback(docs);
         });
+};
+
+var textSearch = function textSearch(term, callback) {
+  var docs = [];
+  db.documents.query(
+    qb.where(
+      qb.term(term)
+    )
+  ).result(function(documents) {
+    documents.forEach(function(document) {
+      docs.push(document.content);
+    })
+    callback(docs);
+  });
 };
 /*
 When specified the function below are making use of ExpressJS' req.params object
@@ -133,7 +149,7 @@ var apiindex = function(req, res) {
 var apiimage = function(req, res) {
     var id = req.params.id;
     var doc = [];
-    selectOne(id, function (oneDocument) {
+    selectOne(id, function(oneDocument) {
         if (oneDocument.length !== 0) {
             res.json(oneDocument);
         } else {
@@ -146,7 +162,7 @@ var apiimage = function(req, res) {
 var apiimagedata = function(req, res) {
     var id = req.params.id;
     var doc = [];
-    selectImageData(id, function (imageData) {
+    selectImageData(id, function(imageData) {
         res.json(imageData);
     });
 };
@@ -155,7 +171,7 @@ var apiimagedata = function(req, res) {
 var apiupdate = function(req, res) {
     var id = req.params.id;
     var update = req.params.update;
-    updateDocument(id, update, function (data) {
+    updateDocument(id, update, function(data) {
         res.json(200);
     });
 
@@ -163,10 +179,10 @@ var apiupdate = function(req, res) {
 
 /* wrapper function for the geospatial search */
 
-var apisearch = function(req, res) {
-    var radius = req.params.radius,
-    lat        = req.params.lat,
-    lng        = req.params.lng;
+var apigeosearch = function(req, res) {
+    var radius = req.params.radius;
+    var lat    = req.params.lat;
+    var lng    = req.params.lng;
 
     var search = {
         radius: radius,
@@ -174,10 +190,18 @@ var apisearch = function(req, res) {
         lng: lng
     };
 
-    geoSearch(search, function (data) {
+    geoSearch(search, function(data) {
         res.json(data);
     });
 };
+
+var apitextsearch = function(req, res) {
+  var term = req.params.term;
+
+  textSearch(term, function(data) {
+    res.json(data);
+  });
+}
 
 var appindex = function(req, res) {
     res.render('index');
@@ -201,6 +225,7 @@ module.exports = {
         image: apiimage,
         imagedata: apiimagedata,
         update: apiupdate,
-        search: apisearch
+        geosearch: apigeosearch,
+        textsearch: apitextsearch
     }
 };

@@ -1,2 +1,15 @@
 .container
-  p {{ vm.message }}
+  .padded
+    p Please add a search term in the input box below
+    form(role='form', class='form-inline', ng-submit='vm.search()', name='searchForm')
+      .form-group
+        input(type='text', class='form-control', placeholder='Search term ...', ng-model='vm.term')
+        button.btn.btn-default(type='submit') Search
+  .results(ng-show='vm.results.length === 0')
+    p No results
+  .results(ng-show='vm.results.length !== 0 && searchForm.$submitted')
+    p {{ vm.results.length }} matches
+    .row
+      ul
+        li(ng-repeat='result in vm.results')
+          a(href='#/edit/{{ result.filename }}') {{ result.title || result.filename }}

@@ -25,11 +25,8 @@
           console.error(data);
         });
 
-        vm.update = function() {
+        vm.updateTitle = function() {
           var update = {};
-          if (vm.image.description) {
-            update.description = vm.image.description
-          }
           update.title = vm.image.newtitle;
           if (update.length !== 0) {
             photofactory.update(vm.image.filename, update)
@@ -38,6 +35,21 @@
                   vm.image.title = update.title;
                 }
               })
+          }
+        }
+
+        vm.updateDescription = function() {
+          var update = {};
+          if (vm.image.description) {
+            update.description = vm.image.description
+          }
+          if (update.length !== 0) {
+            photofactory.update(vm.image.filename, update)
+            .then(function(data) {
+              if (data === '200') {
+                // vm.image.title = update.title;
+              }
+            })
           }
         }
     }
