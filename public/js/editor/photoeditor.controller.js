@@ -31,7 +31,8 @@
           if (update.length !== 0) {
             photofactory.update(vm.image.filename, update)
               .then(function(data) {
-                if (data === '200') {
+                console.log(data);
+                if (data === 200) {
                   vm.image.title = update.title;
                 }
               })
