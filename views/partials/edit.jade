@@ -14,4 +14,7 @@
               button.btn.btn-success(ng-click='vm.update(); vm.editable = ""') Ok
               button.btn.btn-warning(ng-click='vm.editable = ""') Cancel
         p {{ vm.image.description }}
+        p {{ vm.image.make }}
+        p {{ vm.image.model }}
+        p {{ vm.image.created }}
         p #[strong Latitude]: {{ vm.image.location.coordinates[0] }} | #[strong Longitude]: {{ vm.image.location.coordinates[1] }}

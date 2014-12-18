@@ -35,7 +35,7 @@
 
 var    fs         = require('fs');
 var    ExifImage  = require('exif-makernote-fix').ExifImage;
-var    marklogic  =require('marklogic');
+var    marklogic  = require('marklogic');
 var    connection = require('./../dbsettings').connection;
 var    db         = marklogic.createDatabaseClient(connection);
 
@@ -68,10 +68,10 @@ var    db         = marklogic.createDatabaseClient(connection);
 
     // function to convert degrees, minutes and seconds to decimal values
     var convertDegreesToDecimal = function convertDegreesToDecimal(degree, minute, second, sign) {
-        var absoluteDegree,
-            absoluteMinute,
-            absoluteSecond,
-            decimal;
+        var absoluteDegree;
+        var absoluteMinute;
+        var absoluteSecond;
+        var decimal;
 
         // make sure that all arguments are provided
         if (degree && minute && second && sign) {
@@ -163,6 +163,8 @@ var    db         = marklogic.createDatabaseClient(connection);
 
                             var extractedLocation = extractAndConvertGPSData(location);
                             var filenameInDatabase = file.split('/').pop();
+                            var match = exifData.image.ModifyDate.match(/^(\d+)\:(\d+)\:(\d+) (\d+)\:(\d+)\:(\d+)$/);
+                            var created = new Date(match[1], match[2] - 1, match[3], match[4], match[5], match[6]).getTime();
                             callback({
                                 filename: filenameInDatabase,
                                 location: {
@@ -171,7 +173,7 @@ var    db         = marklogic.createDatabaseClient(connection);
                                 },
                                 make: exifData.image.Make,
                                 model: exifData.image.Model,
-                                created: exifData.image.ModifyDate,
+                                created: created, //see above
                                 binary: '/binary/' + filenameInDatabase
                             });
                             console.log('Successfully extracted GPS information from ' + file);
@@ -201,6 +203,8 @@ var    db         = marklogic.createDatabaseClient(connection);
                         location.longitudeReference = gpsData.GPSLongitudeRef;
                         var extractedLocation = extractAndConvertGPSData(location);
                         var filenameInDatabase = loc.split('/').pop();
+                        var match = exifData.image.ModifyDate.match(/^(\d+)\:(\d+)\:(\d+) (\d+)\:(\d+)\:(\d+)$/);
+                        var created = new Date(match[1], match[2] - 1, match[3], match[4], match[5], match[6]).getTime();
                         callback({
                             filename: filenameInDatabase,
                             location: {
@@ -209,7 +213,7 @@ var    db         = marklogic.createDatabaseClient(connection);
                             },
                             make: exifData.image.Make,
                             model: exifData.image.Model,
-                            created: exifData.image.ModifyDate,
+                            created: created, //see above
                             binary: '/binary/' + filenameInDatabase
                         });
                         console.log('Successfully extracted GPS information from ' + loc);

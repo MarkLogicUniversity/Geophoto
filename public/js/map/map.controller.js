@@ -21,9 +21,9 @@
 
       vm.map = new google.maps.Map(document.getElementById('map'), mapOptions);
 
-      vm.markers = [];
-
       var createMarker = function(data, max) {
+        vm.markers = [];
+        vm.loading = {};
         // every marker has to have a latitude, longitude and a title
         var latitude  = data.location.coordinates[0];
         var longitude = data.location.coordinates[1];
@@ -33,8 +33,9 @@
         var marker = {
           map: vm.map,
           position: new google.maps.LatLng(latitude, longitude),
-          title: title,
           id: data.filename,
+          data: data,
+          title: title
         };
 
         photofactory.showImage(marker.id).then(function(d) {
@@ -52,12 +53,13 @@
 
           if (numberOfCalls === max) {
             vm.markers = tmpMarkers;
-            vm.markers.message = '';
+            console.log(vm.markers);
+            vm.loading.message = '';
           } else {
             tmpMarkers.push(marker);
             percentage = Math.round(numberOfCalls / max * 100);
-            vm.markers.message = 'Loading markers, please wait ...';
-            vm.markers.percentage = percentage;
+            vm.loading.message = 'Loading markers, please wait ...';
+            vm.loading.percentage = percentage;
           }
         });
       };

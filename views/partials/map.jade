@@ -1,14 +1,20 @@
 .container
-  div
-    #map
-    div.progress(ng-show='vm.markers.message')
-        div.progress-bar.progress-bar-info(role='progressbar', aria-valuenow='{{vm.markers.percentage}}', aria-valuemin='100', aria-valuemax='100', style='width: {{vm.markers.percentage}}%;') {{ vm.markers.percentage }}%
-    p(ng-show='vm.markers.message') {{ vm.markers.message }}
-    .row(class='fixed',ng-hide='vm.markers.message')
-        .col-sm-3.col-md-3(ng-repeat='marker in vm.markers')
-            p
-                a(href='#', ng-click='openInfoWindow($event, marker)', role='button', class='btn btn-sm btn-default') {{ marker.title | limitTo: 12 }} 
-                    i.glyphicon(class='glyphicon-search')
-                | 
-                a(href='#/edit/{{ marker.id }}', role='button', class='btn btn-sm btn-warning')
-                    i.glyphicon(class='glyphicon-pencil')
+  #map
+  div.progress(ng-show='vm.markers.message')
+      div.progress-bar.progress-bar-info(role='progressbar', aria-valuenow='{{vm.loading.percentage}}', aria-valuemin='100', aria-valuemax='100', style='width: {{vm.loading.percentage}}%;') {{ vm.loading.percentage }}%
+  p(ng-show='vm.loading.message') {{ vm.loading.message }}
+  .row(class='fixed',ng-hide='vm.loading.message')
+    table(class='table table-striped')
+      thead
+        tr
+          th Title
+          th Make
+          th Created
+        tbody
+          tr(ng-repeat='marker in vm.markers')
+            td 
+              a(href='#', ng-click='vm.openInfoWindow($event, marker)') {{ marker.title }} 
+              | - 
+              a(href='#/edit/{{ marker.id }}') edit
+            td {{ marker.data.make }} {{ marker.data.model }}
+            td {{ marker.data.created | date: 'yyyy-MMM-dd' }}

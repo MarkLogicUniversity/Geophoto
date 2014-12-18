@@ -13,10 +13,10 @@
       */
       $routeProvider
         .when('/', {
-            templateUrl: 'partials/main'
+            templateUrl: '/partials/main'
         })
         .when('/map', {
-          templateUrl: 'partials/map',
+          templateUrl: '/partials/map',
           controller: 'MapController',
           controllerAs: 'vm'
         }).
@@ -25,14 +25,19 @@
           controller: 'geoSearchController',
           controllerAs: 'vm'
         }).
+        when('/textsearch', {
+          templateUrl: '/partials/textsearch',
+          controller: 'textSearchController',
+          controllerAs: 'vm'
+        }).
         when('/explorer', {
-          templateUrl: 'partials/explorer'
+          templateUrl: '/partials/explorer'
         }).
         when('/import', {
-          templateUrl: 'partials/importfiles'
+          templateUrl: '/partials/importfiles'
         }).
         when('/edit/:id', {
-          templateUrl: 'partials/edit',
+          templateUrl: '/partials/edit',
           controller: 'photoEditorController',
           controllerAs: 'vm'
         }).

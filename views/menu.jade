@@ -13,8 +13,14 @@
           a(href='/') Home
         li(ng-class='vm.isActive("map")')
           a(href='#/map') Map
-        li(ng-class='vm.isActive("geosearch")')
-          a(href='#/geosearch') Geo Search
+        li
+          a(class='dropdown-toggle', data-toggle='dropdown', role='button', aria-expanded='false') Search
+            span(class='caret')
+          ul(class='dropdown-menu', role='menu')
+            li
+              a(href="#/geosearch") Geo Search
+            li
+              a(href="#/textsearch") Text Search
         li(ng-class='vm.isActive("explorer")')
           a(href='#/explorer') Api Explorer
         li(ng-class='vm.isActive("import")')
