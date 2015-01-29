@@ -7,7 +7,7 @@
         .row
           .col-md-6
             .thumbnail
-              img(ng-src='{{ vm.image.binaryData }}', class='img-rounded')
+              img(ng-src='{{ ::vm.image.binaryData }}', class='img-rounded')
           .col-md-6
             .caption
               h3(ng-click='vm.editable = "title"', ng-hide='vm.editable === "title"') {{ vm.image.title }}
