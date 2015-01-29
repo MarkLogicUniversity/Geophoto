@@ -9,9 +9,9 @@
     function MapController(photofactory) {
       var vm            = this;
       var infoWindow    = new google.maps.InfoWindow();
-      var numberOfCalls = 0;
       var tmpMarkers    = [];
-      var percentage    = 0;
+      var numberOfCalls = 0;
+      var photoData = '';
 
       var mapOptions = {
         zoom: 2,
@@ -21,52 +21,36 @@
 
       vm.map = new google.maps.Map(document.getElementById('map'), mapOptions);
 
-      var createMarker = function(data, max) {
-        vm.markers = [];
-        vm.loading = {};
-        // every marker has to have a latitude, longitude and a title
-        var latitude  = data.location.coordinates[0];
-        var longitude = data.location.coordinates[1];
-
-        var title = data.title || data.filename;
-
-        var marker = {
+      var createMarker = function(photoData) {
+        var latitude  = photoData.location.coordinates[0];
+        var longitude = photoData.location.coordinates[1];
+        var title     = photoData.title || photoData.filename;
+        var marker    = {
           map: vm.map,
           position: new google.maps.LatLng(latitude, longitude),
-          id: data.filename,
-          data: data,
+          id: photoData.filename,
+          data: photoData,
           title: title
         };
+        var point     = new google.maps.Marker(marker);
+        vm.markers    = [];
 
-        photofactory.showImage(marker.id).then(function(d) {
-          marker['binary'] = d[0];
-          marker['content'] = '<div class="infoWindowContent"><img src="data:image/jpg;base64,' + marker.binary + '"></div>';
+        tmpMarkers.push(point);
+        vm.markers = tmpMarkers;
 
-          marker = new google.maps.Marker(marker);
-
-          google.maps.event.addListener(marker, 'click', function() {
-            infoWindow.setContent('<div class="infoWindowHeader"><h3>' + marker.title + '</h3><p><a href="#/edit/'+marker.id+'">edit</a></p></div>' + marker.content);
-            infoWindow.open(vm.map, marker);
+        google.maps.event.addListener(point, 'click', function() {
+          photofactory.showImage(photoData.filename)
+          .then(function(binaryData) {
+            infoWindow.setContent('<div class="infoWindowHeader"><span class="title">' + marker.title + '</span> <span><a href="#/edit/' + marker.id + '" class="btn btn-warning btn-xs"><i class="glyphicon glyphicon-pencil"></i></a></span></div>' + '<div class="infoWindowContent"><img class="img-rounded" src="data:image/jpg;base64,' + binaryData[0] + '"></div>');
+            infoWindow.open(vm.map, point);
           });
-
-          numberOfCalls++;
-
-          if (numberOfCalls === max) {
-            vm.markers = tmpMarkers;
-            console.log(vm.markers);
-            vm.loading.message = '';
-          } else {
-            tmpMarkers.push(marker);
-            percentage = Math.round(numberOfCalls / max * 100);
-            vm.loading.message = 'Loading markers, please wait ...';
-            vm.loading.percentage = percentage;
-          }
         });
       };
-
-      photofactory.showAllPhotos().then(function(data) {
-        for (var i = 0; i < data.length; i++) {
-          createMarker(data[i], data.length);
+      photofactory.showAllPhotos()
+      .then(function(data) {
+        vm.photos = data;
+        for (var i = 0, max = data.length; i < max; i++) {
+            createMarker(data[i]);
         }
       });
 

@@ -45,6 +45,11 @@ body {
 .thumbnail {
   border: 0px;
 }
+.title {
+  font-weight: 900;
+  font-size: 20px;
+  verticle-align: middle;
+}
 .img-rounded {
   width: 600px;
 }

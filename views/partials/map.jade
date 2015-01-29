@@ -3,18 +3,22 @@
   div.progress(ng-show='vm.markers.message')
       div.progress-bar.progress-bar-info(role='progressbar', aria-valuenow='{{vm.loading.percentage}}', aria-valuemin='100', aria-valuemax='100', style='width: {{vm.loading.percentage}}%;') {{ vm.loading.percentage }}%
   p(ng-show='vm.loading.message') {{ vm.loading.message }}
-  .row(class='fixed',ng-hide='vm.loading.message')
+  .row(class='fixed')
     table(class='table table-striped')
       thead
         tr
           th Title
           th Make
           th Created
+          th Action
         tbody
-          tr(ng-repeat='marker in vm.markers')
-            td 
-              a(href='#', ng-click='vm.openInfoWindow($event, marker)') {{ marker.title }} 
-              | - 
-              a(href='#/edit/{{ marker.id }}') edit
-            td {{ marker.data.make }} {{ marker.data.model }}
-            td {{ marker.data.created | date: 'yyyy-MMM-dd' }}
+          tr(ng-repeat='marker in vm.markers | orderBy: "-data.created"')
+            td {{ marker.data.title || marker.data.filename }}
+            td {{ ::marker.data.make }} {{ ::marker.data.model }}
+            td {{ ::marker.data.created | dateSuffix }}
+            td
+              a(href='#', ng-click='vm.openInfoWindow($event, marker)', class='btn btn-success btn-xs')
+                i(class='glyphicon glyphicon-eye-open')
+              | 
+              a(href='#/edit/{{ marker.id }}', class='btn btn-warning btn-xs')
+                i(class='glyphicon glyphicon-pencil')

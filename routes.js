@@ -29,11 +29,19 @@ e.g.
 */
 var selectAll = function selectAll(callback) {
     var docs = [];
-    db.documents.query(qb.where(qb.collection('image')).slice(0,300)).result(function(documents) {
-        documents.forEach(function(document) {
-            docs.push(document.content);
-        });
-        callback(docs);
+    db.documents.query(
+      qb.where(
+        qb.collection('image')
+      )
+      .orderBy(
+        qb.sort('filename')
+      )
+      .slice(0,300)
+    ).result(function(documents) {
+      documents.forEach(function(document) {
+          docs.push(document.content);
+      });
+      callback(docs);
     });
 };
 

@@ -39,7 +39,13 @@
         when('/edit/:id', {
           templateUrl: '/partials/edit',
           controller: 'photoEditorController',
-          controllerAs: 'vm'
+          controllerAs: 'vm',
+          resolve: {
+            photo: function(photofactory, $route) {
+              var id = $route.current.params.id;
+              return photofactory.showImage(id);
+            }
+          }
         }).
         when('/404', {
           templateUrl: 'partials/404'
