@@ -1,13 +1,13 @@
 'use strict';
 process.env.NODE_ENV = 'development';
 
-var express        = require('express'),
-    bodyParser     = require('body-parser'),
-    methodOverride = require('method-override'),
-    app            = express(),
-    router         = express.Router(),
-    routes         = require('./routes').app,
-    apiroutes      = require('./routes').api;
+var express        = require('express');
+var bodyParser     = require('body-parser');
+var methodOverride = require('method-override');
+var app            = express();
+var router         = express.Router();
+var routes         = require('./routes').app;
+var apiroutes      = require('./routes').api;
 
 app.set('port', 3000);
 app.set('view engine', 'jade');
@@ -29,8 +29,8 @@ Basic route configuration
 router.route('/').get(routes.index);
 router.route('/api/').get(apiroutes.index);
 router.route('/api/image/:id').get(apiroutes.image);
-router.route('/api/image/search/:radius/:lat/:lng').get(apiroutes.geosearch);
-router.route('/api/image/search/:term').get(apiroutes.textsearch);
+router.route('/api/image/search/:radius/:lat/:lng').get(apiroutes.search);
+router.route('/api/image/search/:term').get(apiroutes.search);
 router.route('/api/imagedata/:id').get(apiroutes.imagedata);
 router.route('/api/image/update/:id/:update').post(apiroutes.update);
 router.route('/api/:id').get(apiroutes.image);

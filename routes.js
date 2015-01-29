@@ -1,11 +1,11 @@
 'use strict';
 
 // route handler for the API
-var marklogic  = require('marklogic'),
-    connection = require('./dbsettings').connection,
-    db         = marklogic.createDatabaseClient(connection),
-    qb         = marklogic.queryBuilder,
-    p          = marklogic.patchBuilder;
+var marklogic  = require('marklogic');
+var connection = require('./dbsettings').connection;
+var db         = marklogic.createDatabaseClient(connection);
+var qb         = marklogic.queryBuilder;
+var p          = marklogic.patchBuilder;
 
 /*
 function to select all documents from the database - the query is restricted to
@@ -36,7 +36,7 @@ var selectAll = function selectAll(callback) {
       .orderBy(
         qb.sort('filename')
       )
-      .slice(0,300)
+      .slice(0,300) //return 300 documents "per page" (pagination)
     ).result(function(documents) {
       documents.forEach(function(document) {
           docs.push(document.content);
@@ -161,6 +161,7 @@ var apiimage = function(req, res) {
         if (oneDocument.length !== 0) {
             res.json(oneDocument);
         } else {
+            // this 404 is captured via an AngularJS HTTP Interceptor
             res.status(404).end();
         }
     });
@@ -187,7 +188,9 @@ var apiupdate = function(req, res) {
 
 /* wrapper function for the geospatial search */
 
-var apigeosearch = function(req, res) {
+var apisearch = function(req, res) {
+  //if radius exists it is a geospatial search
+  if (req.params.radius ) {
     var radius = req.params.radius;
     var lat    = req.params.lat;
     var lng    = req.params.lng;
@@ -201,14 +204,21 @@ var apigeosearch = function(req, res) {
     geoSearch(search, function(data) {
         res.json(data);
     });
+  } else {
+    var term = req.params.term;
+
+    textSearch(term, function(data) {
+      res.json(data);
+    });
+  }
+};
+
+var apigeosearch = function(req, res) {
+
 };
 
 var apitextsearch = function(req, res) {
-  var term = req.params.term;
 
-  textSearch(term, function(data) {
-    res.json(data);
-  });
 }
 
 var appindex = function(req, res) {
@@ -233,7 +243,6 @@ module.exports = {
         image: apiimage,
         imagedata: apiimagedata,
         update: apiupdate,
-        geosearch: apigeosearch,
-        textsearch: apitextsearch
+        search: apisearch
     }
 };

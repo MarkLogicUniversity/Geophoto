@@ -40,7 +40,12 @@
           templateUrl: '/partials/edit',
           controller: 'photoEditorController',
           controllerAs: 'vm',
+          //resolve the photo route - only display this partial when image has loaded
           resolve: {
+            data: function(photofactory, $route) {
+              var id = $route.current.params.id
+              return photofactory.showOnePhoto(id);
+            },
             photo: function(photofactory, $route) {
               var id = $route.current.params.id;
               return photofactory.showImage(id);

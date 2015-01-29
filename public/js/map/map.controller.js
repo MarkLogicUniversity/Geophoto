@@ -8,12 +8,18 @@
 
     function MapController(photofactory) {
       var vm            = this;
+      //sorting
+      vm.order = {
+        sortBy: 'data.created',
+        reverse: false
+      }
+
       var infoWindow    = new google.maps.InfoWindow();
       var tmpMarkers    = [];
       var numberOfCalls = 0;
-      var photoData = '';
+      var photoData     = '';
 
-      var mapOptions = {
+      var mapOptions    = {
         zoom: 2,
         center: new google.maps.LatLng(10, 0),
         mapTypeId: google.maps.MapTypeId.ROAD

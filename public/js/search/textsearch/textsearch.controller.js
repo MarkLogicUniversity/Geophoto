@@ -12,7 +12,6 @@
       photofactory.textSearch(vm.term)
       .then(function(data) {
         vm.results = data;
-        console.log(vm.results);
       })
       .catch(function(error) {
         console.error(error);

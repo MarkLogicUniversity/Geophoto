@@ -6320,6 +6320,19 @@ body {
 .padded {
   padding-top: 10px;
 }
+.plain {
+  font-weight: normal;
+  color: #555;
+  cursor: pointer;
+  font-size: 10px;
+}
+.plain:hover {
+  font-weight: normal;
+  text-decoration: none;
+  color: #000;
+  cursor: pointer;
+  font-size: 10px;
+}
 #map {
     height:450px;
     margin-top: 10px;
@@ -6346,7 +6359,7 @@ body {
 .title {
   font-weight: 900;
   font-size: 20px;
-  verticle-align: middle;
+  vertical-align: middle;
 }
 .img-rounded {
   width: 600px;

@@ -17,7 +17,7 @@
                     input.form-control(type='text', required='', ng-model='vm.image.newtitle', size='{{ vm.image.newtitle.length }}', name='newtitle')
                     button.btn.btn-success(ng-click='vm.updateTitle(); vm.editable = ""') Save
                     button.btn.btn-warning(ng-click='vm.editable = ""') Cancel
-              p.description(ng-click='vm.editable = "description"', ng-hide='vm.editable === "description"') {{ vm.image.description || 'No description yet' }}
+              p.description(ng-click='vm.editable = "description"', ng-hide='vm.editable === "description"') {{ vm.image.description }}
               span(ng-show='vm.editable === "description"')
                 form.form-inline(name='descriptionForm')
                   .form-group
