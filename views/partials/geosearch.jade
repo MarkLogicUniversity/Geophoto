@@ -1,6 +1,11 @@
 .container
     div
-        #map
-    ul
+      #map
+    .results(ng-show='vm.results.length === 0')
+      p No results
+    .results(ng-show='vm.results.length !== 0 && vm.searching')
+      p {{ vm.results.length  }} {{ vm.results.length === 1 ? 'match' : 'matches' }}
+    .row
+      ul
         li(ng-repeat='result in vm.results')
-            a(href='#/edit/{{ result.filename }}') {{ result.title || result.filename }}
+          a(href='#/edit/{{ result.content.filename }}') {{ result.content.title || result.content.filename }}

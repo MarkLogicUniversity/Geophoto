@@ -8,6 +8,7 @@
 
     function geoSearchController(photofactory) {
       var vm = this;
+      vm.searching = false;
       var circle;
 
       var mapOptions = {
@@ -92,7 +93,8 @@
         geoSearch(search);
 
         function geoSearch(object) {
-          photofactory.geoSearch(object).then(function (data) {
+          vm.searching = true;
+          photofactory.geoSearch(object).then(function(data) {
             vm.results = data;
           });
         }

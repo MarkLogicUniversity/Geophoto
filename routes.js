@@ -27,9 +27,8 @@ e.g.
   "binary": "/binary/IMG_6193.jpg"
 }
 */
-var selectAll = function selectAll(callback) {
-    var docs = [];
-    db.documents.query(
+var selectAll = function selectAll() {
+    return db.documents.query(
       qb.where(
         qb.collection('image')
       )
@@ -37,23 +36,12 @@ var selectAll = function selectAll(callback) {
         qb.sort('filename')
       )
       .slice(0,300) //return 300 documents "per page" (pagination)
-    ).result(function(documents) {
-      documents.forEach(function(document) {
-          docs.push(document.content);
-      });
-      callback(docs);
-    });
+    ).result();
 };
 
 /* This function selects one image from the database */
-var selectOne = function selectOne(uri, callback) {
-    var oneDocument = [];
-    db.documents.read('/image/' + uri + '.json').result().then(function (doc) {
-        doc.forEach(function (d) {
-            oneDocument.push(d.content);
-        });
-        callback(oneDocument);
-    })
+var selectOne = function selectOne(uri) {
+    return db.documents.read('/image/' + uri + '.json').result();
 };
 
 /* This function is responsible for retrieving the binary data from the database.
@@ -61,23 +49,17 @@ Once the data is retrieve it is converted to a base64 encoded string. In the fro
 this data is then used as a data-uri to build up the image itself
 */
 var selectImageData = function selectImageData(uri, callback) {
-    var imageData = [];
-    db.documents.read('/binary/' + uri).result().then(function (data) {
-        data.forEach(function (d) {
-            imageData.push(new Buffer(d.content, 'binary').toString('base64'));
-        });
-        callback(imageData);
-    });
+    return db.documents.read('/binary/' + uri).result();
 };
 
 /* This function updates the document. From the frontend we are allowed to set/change
 the title of an image.
 */
-var updateDocument = function(uri, update, callback) {
+var updateDocument = function(uri, update) {
   update = JSON.parse(update);
   var description = update.description;
   var newDocument = {};
-  db.documents.read('/image/' + uri + '.json')
+  return db.documents.read('/image/' + uri + '.json')
     .result()
     .then(function(document) {
       if (update.title) {
@@ -91,9 +73,6 @@ var updateDocument = function(uri, update, callback) {
       document[0].collections = ['image'];
       return db.documents.write(document[0])
         .result();
-    })
-    .then(function(document) {
-      callback(newDocument);
     });
   };
 
@@ -103,40 +82,27 @@ Geospatial search in MarkLogic uses a geo object (in thise case a geo path)
 and it also has support for 4 geospatial types. We have circle, square, polygon
 and point. In this function we are using the geospatial circle
 */
-var geoSearch = function search(object, callback) {
-    var docs = [],
-    radius   = parseInt(object.radius),
-    lat      = parseFloat(object.lat),
-    lng      = parseFloat(object.lng);
-
-    db.documents.query(
-        qb.where(
-            qb.collection('image'),
-                qb.geoPath(
-                   'location/coordinates',
-                    qb.circle(radius, lat, lng)
-                )
-            ).slice(0,300).withOptions({categories:['content']})
-        ).result(function(documents) {
-            documents.forEach(function(document) {
-                docs.push(document.content);
-            });
-            callback(docs);
-        });
-};
-
-var textSearch = function textSearch(term, callback) {
-  var docs = [];
-  db.documents.query(
-    qb.where(
-      qb.term(term)
-    )
-  ).result(function(documents) {
-    documents.forEach(function(document) {
-      docs.push(document.content);
-    })
-    callback(docs);
-  });
+var search = function search(arg) {
+  if (typeof arg === 'object') {
+    var radius   = parseInt(arg.radius);
+    var lat      = parseFloat(arg.lat);
+    var lng      = parseFloat(arg.lng);
+    return db.documents.query(
+      qb.where(
+          qb.collection('image'),
+              qb.geoPath(
+                 'location/coordinates',
+                  qb.circle(radius, lat, lng)
+              )
+          ).slice(0,300).withOptions({categories:['content']})
+      ).result();
+  } else {
+    return db.documents.query(
+      qb.where(
+        qb.term(arg)
+      ).slice(0,300)
+    ).result();
+  }
 };
 /*
 When specified the function below are making use of ExpressJS' req.params object
@@ -148,7 +114,7 @@ if the route configuration contains:
 
 /* wrapper function for selectAll() to retrieve all documents */
 var apiindex = function(req, res) {
-    selectAll(function(documents) {
+    selectAll().then(function(documents) {
         res.json(documents);
     });
 };
@@ -156,70 +122,59 @@ var apiindex = function(req, res) {
 /* wrapper function to retrieve one document information */
 var apiimage = function(req, res) {
     var id = req.params.id;
-    var doc = [];
-    selectOne(id, function(oneDocument) {
-        if (oneDocument.length !== 0) {
-            res.json(oneDocument);
-        } else {
-            // this 404 is captured via an AngularJS HTTP Interceptor
-            res.status(404).end();
-        }
+    selectOne(id).then(function(document) {
+      if (document.length !== 0) {
+        res.json(document);
+      } else {
+        // this 404 is captured via an AngularJS HTTP Interceptor
+        res.status(404).end();
+      }
     });
 };
 
 /* wrapper function to retrieve image data */
 var apiimagedata = function(req, res) {
     var id = req.params.id;
-    var doc = [];
-    selectImageData(id, function(imageData) {
-        res.json(imageData);
+    selectImageData(id).then(function(binaryData) {
+        res.json(new Buffer(binaryData[0].content, 'binary').toString('base64'));
     });
 };
 
 /* wrapper function to update a document's title */
 var apiupdate = function(req, res) {
-    var id = req.params.id;
-    var update = req.params.update;
-    updateDocument(id, update, function(data) {
-        res.json(200);
-    });
-
+  var id = req.params.id;
+  var update = req.params.update;
+  updateDocument(id, update).then(function() {
+    res.json(200);
+  });
 };
 
 /* wrapper function for the geospatial search */
 
 var apisearch = function(req, res) {
   //if radius exists it is a geospatial search
-  if (req.params.radius ) {
+  if (req.params.radius) {
     var radius = req.params.radius;
     var lat    = req.params.lat;
     var lng    = req.params.lng;
 
-    var search = {
+    var searchObj = {
         radius: radius,
         lat: lat,
         lng: lng
     };
 
-    geoSearch(search, function(data) {
+    search(searchObj).then(function(data) {
         res.json(data);
     });
   } else {
     var term = req.params.term;
 
-    textSearch(term, function(data) {
+    search(term).then(function(data) {
       res.json(data);
     });
   }
 };
-
-var apigeosearch = function(req, res) {
-
-};
-
-var apitextsearch = function(req, res) {
-
-}
 
 var appindex = function(req, res) {
     res.render('index');

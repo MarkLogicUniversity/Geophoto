@@ -47,7 +47,7 @@
         google.maps.event.addListener(point, 'click', function() {
           photofactory.showImage(photoData.filename)
           .then(function(binaryData) {
-            infoWindow.setContent('<div class="infoWindowHeader"><span class="title">' + marker.title + '</span> <span><a href="#/edit/' + marker.id + '" class="btn btn-warning btn-xs"><i class="glyphicon glyphicon-pencil"></i></a></span></div>' + '<div class="infoWindowContent"><img class="img-rounded" src="data:image/jpg;base64,' + binaryData[0] + '"></div>');
+            infoWindow.setContent('<div class="infoWindowHeader"><span class="title">' + marker.title + '</span> <span><a href="#/edit/' + marker.id + '" class="btn btn-warning btn-xs"><i class="glyphicon glyphicon-pencil"></i></a></span></div>' + '<div class="infoWindowContent"><img class="img-rounded" src="data:image/jpg;base64,' + binaryData + '"></div>');
             infoWindow.open(vm.map, point);
           });
         });
@@ -56,7 +56,7 @@
       .then(function(data) {
         vm.photos = data;
         for (var i = 0, max = data.length; i < max; i++) {
-            createMarker(data[i]);
+            createMarker(data[i].content);
         }
       });
 
