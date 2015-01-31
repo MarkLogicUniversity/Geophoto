@@ -6310,6 +6310,9 @@ body {
   margin-bottom: 50px;
   margin-top: 50px;
 }
+a, a:hover {
+  cursor: pointer;
+}
 .starter-template {
   padding: 40px 15px;
   text-align: center;
@@ -6338,6 +6341,9 @@ body {
     margin-top: 10px;
     margin-bottom: 10px;
 }
+.table-nonfluid {
+   width: auto;
+}
 .fixed {
   height: 200px;
   overflow: scroll;
@@ -6362,7 +6368,7 @@ body {
   vertical-align: middle;
 }
 .img-rounded {
-  width: 600px;
+  border: 1px solid #000;
 }
 .description {
   background: #eee;

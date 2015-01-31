@@ -65,7 +65,7 @@ var db         = marklogic.createDatabaseClient(connection);
           console.log('Successfully inserted JPEG doc: ' + response.documents[0].uri);
         });
         fs.createReadStream(file).pipe(ws);
-    }
+    };
 
     // function to extract GPS data and convert that to decimal lat/long values
     var extractAndConvertGPSData = function extractAndConvertGPSData(location) {
@@ -100,7 +100,7 @@ var db         = marklogic.createDatabaseClient(connection);
             decimalLocation.longitude = Math.round(absoluteDegreeLongitude + (absoluteMinuteLongitude/60) + (absoluteSecondLongitude/3600)) * longitudeSign/1000000;
             return decimalLocation;
         }
-    }
+    };
 
     /**
      * function that extracts GPS information from the file(s) using the ExifImage library
@@ -206,13 +206,11 @@ var db         = marklogic.createDatabaseClient(connection);
     // function to run the import process
     var importProcess = function importProcess(callback) {
         // get the path as the first agrument
-        var arg = process.argv[2],
-
-                // make sure the argument exists (either file or folder)
-                exists = fs.existsSync(arg),
-
-                // store the collection of files in an array
-                files = [];
+        var arg    = process.argv[2];
+        // make sure the argument exists (either file or folder)
+        var exists = fs.existsSync(arg);
+        // store the collection of files in an array
+        var files  = [];
 
         if (exists) {
 
@@ -250,6 +248,6 @@ var db         = marklogic.createDatabaseClient(connection);
             console.log('The argument ' + arg + ' is not a valid path/file.');
             process.exit(1);
         }
-    }
+    };
     // run the app
     importProcess();

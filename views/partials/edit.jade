@@ -5,10 +5,12 @@
         h1.panel-title Photo details
       .panel-body
         .row
-          .col-md-6
-            .thumbnail
-              img(ng-src='{{ ::vm.image.binaryData }}', class='img-rounded')
-          .col-md-6
+          .col-md-7
+            //- .thumbnail
+            //-   img(ng-src='{{ ::vm.image.binaryData }}', class='img-rounded')
+            //- script loadCanvas('{{ ::vm.image.binaryData }}')
+            canvas(id='photo-canvas', class='img-rounded', style='border: 1px solid black;')
+          .col-md-5
             .caption
               h2(ng-click='vm.editable = "title"', ng-hide='vm.editable === "title"') {{ vm.image.title }}
               span(ng-show='vm.editable === "title"')
@@ -21,7 +23,7 @@
               span(ng-show='vm.editable === "description"')
                 form.form-inline(name='descriptionForm')
                   .form-group
-                    textarea(class='form-control', rows="3", cols='60', placeholder='Photo description', ng-model='vm.image.description')
+                    textarea(class='form-control', rows="3", cols='55', placeholder='Photo description', ng-model='vm.image.description')
                     p
                       button.btn.btn-success(ng-click='vm.updateDescription(); vm.editable = ""') Save
                       button.btn.btn-warning(ng-click='vm.editable = ""') Cancel
@@ -30,3 +32,23 @@
               p #[strong Created on]: {{ ::vm.image.created | dateSuffix  }}
               p #[strong Latitude]: {{ ::vm.image.location.coordinates[0] }} | #[strong Longitude]: {{ ::vm.image.location.coordinates[1] }}
               small Original filename: {{ ::vm.image.filename }}
+              hr
+              a(ng-click='vm.toggleOverlay(vm.overlay)') {{ !vm.overlay ? 'Show' : 'Hide' }} Overlays
+              table(class='table table-nonfluid', ng-show='vm.overlay')
+                tbody
+                  tr
+                    td
+                      input(type='checkbox', ng-model='vm.vintageValue', ng-click='vm.vintage(vm.vintageValue)')
+                      |  Vintage
+                  tr
+                    td
+                      input(type='checkbox', ng-model='vm.lomoValue', ng-click='vm.lomo(vm.lomoValue)')
+                      |  Lomo
+                  tr
+                    td
+                      input(type='checkbox', ng-model='vm.glowingSunValue', ng-click='vm.glowingSun(vm.glowingSunValue)')
+                      |  Glowing Sun
+                  tr
+                    td
+                      input(type='checkbox', ng-model='vm.nostalgiaValue', ng-click='vm.nostalgia(vm.nostalgiaValue)')
+                      |  Nostalgia
