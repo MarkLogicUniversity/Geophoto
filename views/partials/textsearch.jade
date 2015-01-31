@@ -5,7 +5,7 @@
       .form-group
         input(type='text', class='form-control', placeholder='Search term ...', ng-model='vm.term')
         button.btn.btn-default(type='submit') Search
-  .results(ng-show='vm.results.length === 0')
+  .results(ng-show='vm.results.length === 0 && searchForm.$submitted')
     p No results
   .results(ng-show='vm.results.length !== 0 && searchForm.$submitted')
     p {{ vm.results.length  }} {{ vm.results.length === 1 ? 'match' : 'matches' }}

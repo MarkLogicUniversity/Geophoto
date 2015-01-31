@@ -2,28 +2,29 @@
   #map
   p(ng-show='vm.loading.message') {{ vm.loading.message }}
   .row(class='fixed')
-    table(class='table table-striped')
-      thead
-        tr
-          th Title
-            a(class='plain', ng-click='vm.order.sortBy="data.title"; vm.order.reverse=!vm.order.reverse') {{ vm.order.sortBy === 'data.title' && vm.order.reverse ? '&#9650;' : '&#9660;' }}
-          th Filename
-            a(class='plain', ng-click='vm.order.sortBy="data.filename"; vm.order.reverse=!vm.order.reverse') {{ vm.order.sortBy === 'data.filename' && vm.order.reverse ? '&#9650;' : '&#9660;' }}
-          th Make
-            a(class='plain', ng-click='vm.order.sortBy="data.make && data.model"; vm.order.reverse=!vm.order.reverse') {{ vm.order.sortBy === 'data.make && data.model' && vm.order.reverse ? '&#9650;' : '&#9660;' }}
-          th Created
-            a(class='plain', ng-click='vm.order.sortBy="data.created"; vm.order.reverse=!vm.order.reverse') {{ vm.order.sortBy === 'data.created' && vm.order.reverse ? '&#9650;' : '&#9660;' }}
-          th Action
-        tbody
-          
-          tr(ng-repeat='marker in vm.markers | orderBy: vm.order.sortBy:vm.order.reverse')
-            td {{ marker.data.title || marker.data.filename }}
-            td {{ marker.data.filename }}
-            td {{ ::marker.data.make }} {{ ::marker.data.model }}
-            td {{ ::marker.data.created | dateSuffix }}
-            td
-              a(href='#', ng-click='vm.openInfoWindow($event, marker)', class='btn btn-success btn-xs')
-                i(class='glyphicon glyphicon-eye-open')
-              | 
-              a(href='#/edit/{{ marker.id }}', class='btn btn-warning btn-xs')
-                i(class='glyphicon glyphicon-pencil')
+    .table-responsive
+      table(class='table table-striped')
+        thead
+          tr
+            th Title
+              a(class='plain', ng-click='vm.order.sortBy="data.title"; vm.order.reverse=!vm.order.reverse') {{ vm.order.sortBy === 'data.title' && vm.order.reverse ? '&#9650;' : '&#9660;' }}
+            th Filename
+              a(class='plain', ng-click='vm.order.sortBy="data.filename"; vm.order.reverse=!vm.order.reverse') {{ vm.order.sortBy === 'data.filename' && vm.order.reverse ? '&#9650;' : '&#9660;' }}
+            th Make
+              a(class='plain', ng-click='vm.order.sortBy="data.make && data.model"; vm.order.reverse=!vm.order.reverse') {{ vm.order.sortBy === 'data.make && data.model' && vm.order.reverse ? '&#9650;' : '&#9660;' }}
+            th Created
+              a(class='plain', ng-click='vm.order.sortBy="data.created"; vm.order.reverse=!vm.order.reverse') {{ vm.order.sortBy === 'data.created' && vm.order.reverse ? '&#9650;' : '&#9660;' }}
+            th Action
+          tbody
+            
+            tr(ng-repeat='marker in vm.markers | orderBy: vm.order.sortBy:vm.order.reverse')
+              td {{ marker.data.title || marker.data.filename }}
+              td {{ marker.data.filename }}
+              td {{ ::marker.data.make }} {{ ::marker.data.model }}
+              td {{ ::marker.data.created | dateSuffix }}
+              td
+                a(href='#', ng-click='vm.openInfoWindow($event, marker)', class='btn btn-success btn-xs')
+                  i(class='glyphicon glyphicon-eye-open')
+                | 
+                a(href='#/edit/{{ marker.id }}', class='btn btn-warning btn-xs')
+                  i(class='glyphicon glyphicon-pencil')
