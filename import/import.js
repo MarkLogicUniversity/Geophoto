@@ -52,7 +52,7 @@ var db         = marklogic.createDatabaseClient(connection);
             contentType: 'application/json',
             collections: ['image'],
             content: data
-        }).result(function (response) {
+        }).result(function(response) {
             console.log('Successfully inserted JSON doc: ', response.documents[0].uri);
         });
 

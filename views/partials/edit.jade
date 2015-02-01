@@ -33,6 +33,8 @@
               p #[strong Latitude]: {{ ::vm.image.location.coordinates[0] }} | #[strong Longitude]: {{ ::vm.image.location.coordinates[1] }}
               small Original filename: {{ ::vm.image.filename }}
               hr
+              button(ng-click='vm.test()') TEST
+              hr
               a(ng-click='vm.toggleOverlay(vm.overlay)') {{ !vm.overlay ? 'Show' : 'Hide' }} Overlays
               table(class='table table-nonfluid', ng-show='vm.overlay')
                 tbody
