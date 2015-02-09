@@ -21,7 +21,7 @@ io.on('connection', function(socket) {
       collections: ['binary'],
       content: dataUriToBuffer(data.img)
     }).result(function(response) {
-      console.log('SUCCESS FUCKER!');
+      console.log('success');
     });
   });
 });
