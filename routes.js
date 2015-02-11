@@ -100,10 +100,7 @@ var updateDocument = function(uri, update) {
 
 var saveImage = function(data) {
   data = JSON.parse(data);
-  console.log('yay')
-  //console.log(data);
-  // console.log(data.id);
-  // console.log(data.img);
+  console.log('yay');
 }
 
 /* This function is responsible for doing a geospatial search
@@ -124,7 +121,7 @@ var search = function search(arg) {
                  'location/coordinates',
                   qb.circle(radius, lat, lng)
               )
-          ).slice(0,300).withOptions({categories:['content']})
+          ).slice(0,300)
       ).result();
   } else {
     return db.documents.query(
@@ -146,6 +143,8 @@ if the route configuration contains:
 var apiindex = function(req, res) {
     selectAll().then(function(documents) {
         res.json(documents);
+    }).catch(function(error) {
+      console.log('Error: ', error);
     });
 };
 
@@ -159,6 +158,8 @@ var apiimage = function(req, res) {
         // this 404 is captured via an AngularJS HTTP Interceptor
         res.status(404).end();
       }
+    }).catch(function(error) {
+      console.log('Error: ', error);
     });
 };
 
@@ -167,6 +168,8 @@ var apiimagedata = function(req, res) {
     var id = req.params.id;
     selectImageData(id).then(function(binaryData) {
         res.json(new Buffer(binaryData[0].content, 'binary').toString('base64'));
+    }).catch(function(error) {
+      console.log('Error: ', error);
     });
 };
 
@@ -176,6 +179,8 @@ var apiupdate = function(req, res) {
   var update = req.params.update;
   updateDocument(id, update).then(function() {
     res.json(200);
+  }).catch(function(error) {
+    console.log('Error: ', error);
   });
 };
 
@@ -201,12 +206,16 @@ var apisearch = function(req, res) {
 
     search(searchObj).then(function(data) {
         res.json(data);
+    }).catch(function(error) {
+      console.log('Error: ', error);
     });
   } else {
     var term = req.params.term;
 
     search(term).then(function(data) {
       res.json(data);
+    }).catch(function(error) {
+      console.log('Error: ', error);
     });
   }
 };
