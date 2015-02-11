@@ -117,8 +117,8 @@ var search = function search(arg) {
     return db.documents.query(
       qb.where(
           qb.collection('image'),
-              qb.geoPath(
-                 'location/coordinates',
+              qb.geospatial(
+                 qb.geoPath('location/coordinates'),
                   qb.circle(radius, lat, lng)
               )
           ).slice(0,300)
