@@ -118,8 +118,8 @@ var search = function search(arg) {
       qb.where(
           qb.collection('image'),
               qb.geospatial(
-                 qb.geoPath('location/coordinates'),
-                  qb.circle(radius, lat, lng)
+                qb.geoProperty(qb.property('location'), qb.property('coordinates')),
+                qb.circle(radius, lat, lng)
               )
           ).slice(0,300)
       ).result();
