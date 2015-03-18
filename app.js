@@ -15,9 +15,6 @@ app.use('/components', express.static(__dirname + '/components'));
 app.use('/public', express.static(__dirname + '/public'));
 app.use('/workarea', express.static(__dirname + '/workarea'));
 app.use('/views', express.static(__dirname + '/views'));
-// app.use(bodyParser.json({limit: '10mb'}));
-// app.use(bodyParser.urlencoded({limit: '10mb'}));
-// app.use(bodyParser.raw({limit: '10mb'}));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json({extended: true}));
 
@@ -37,7 +34,6 @@ router.route('/api/image/search/:radius/:lat/:lng').get(apiroutes.search);
 router.route('/api/image/search/:term').get(apiroutes.search);
 router.route('/api/imagedata/:id').get(apiroutes.imagedata);
 router.route('/api/image/update/:id/:update').post(apiroutes.update);
-router.route('/api/image/save/:data').post(apiroutes.save);
 router.route('/api/:id').get(apiroutes.image);
 
 //route declaration for the partials

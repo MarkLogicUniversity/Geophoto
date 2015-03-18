@@ -12,7 +12,6 @@
         showOnePhoto: showOnePhoto,
         showImage: showImage,
         update: update,
-        save: save,
         geoSearch: geoSearch,
         textSearch: textSearch
       };
@@ -42,14 +41,6 @@
         var update = JSON.stringify(update);
         return $http
           .post('/api/image/update/' + id + '/' + update)
-          .then(complete)
-          .catch(failed);
-      }
-
-      function save(data) {
-        var data = JSON.stringify(data);
-        return $http
-          .post('/api/image/save/' + data)
           .then(complete)
           .catch(failed);
       }

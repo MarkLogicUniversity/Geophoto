@@ -62,7 +62,7 @@ var db         = marklogic.createDatabaseClient(connection);
           collections: ['binary']
         });
         ws.result(function(response) {
-          console.log('Successfully inserted JPEG doc: ' + response.documents[0].uri);
+          console.log('Successfully inserted JPEG doc: ', response.documents[0].uri);
         });
         fs.createReadStream(file).pipe(ws);
     };
@@ -127,7 +127,7 @@ var db         = marklogic.createDatabaseClient(connection);
                 // console.log(exifData.image.Make);
                 // console.log(exifData.image.Model);
                 // console.log(exifData.image.ModifyDate);
-                new ExifImage({ image: file}, function(error, exifData) {
+                new ExifImage({ image: file }, function(error, exifData) {
                     if (error) {
                         console.log('Error with ExifImage library: ' + error);
                     } else {

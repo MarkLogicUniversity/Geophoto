@@ -5,30 +5,6 @@ var marklogic  = require('marklogic');
 var connection = require('./dbsettings').connection;
 var db         = marklogic.createDatabaseClient(connection);
 var qb         = marklogic.queryBuilder;
-var p          = marklogic.patchBuilder;
-var dataUriToBuffer = require('./helper');
-
-
-var io = require('socket.io').listen(3001);
-var ss = require('socket.io-stream');
-
-io.on('connection', function(socket) {
-  socket.on('foo', function(data) {
-    var uri = '/binary/updated/' + data.id;
-    db.documents.write({
-      uri: uri,
-      contentType: 'image/jpeg',
-      collections: ['binary'],
-      content: dataUriToBuffer(data.img)
-    }).result(function(response) {
-      console.log('success');
-    });
-  });
-});
-
-
-
-
 /*
 function to select all documents from the database - the query is restricted to
 retrieve images from the 'image' collection. The 'image' collection consists of
@@ -98,14 +74,9 @@ var updateDocument = function(uri, update) {
   });
 };
 
-var saveImage = function(data) {
-  data = JSON.parse(data);
-  console.log('yay');
-}
-
 /* This function is responsible for doing a geospatial search
 
-Geospatial search in MarkLogic uses a geo object (in thise case a geo path)
+Geospatial search in MarkLogic uses a geospatial object (in thise case a geo path)
 and it also has support for 4 geospatial types. We have circle, square, polygon
 and point. In this function we are using the geospatial circle
 */
@@ -184,13 +155,7 @@ var apiupdate = function(req, res) {
   });
 };
 
-var apisave = function(req, res) {
-  saveImage(req.params.data);
-  res.json(200);
-};
-
 /* wrapper function for the geospatial search */
-
 var apisearch = function(req, res) {
   //if radius exists it is a geospatial search
   if (req.params.radius) {
@@ -242,7 +207,6 @@ module.exports = {
         image: apiimage,
         imagedata: apiimagedata,
         update: apiupdate,
-        save: apisave,
         search: apisearch
     }
 };
