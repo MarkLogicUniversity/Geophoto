@@ -46,7 +46,7 @@ var selectOne = function selectOne(uri) {
 Once the data is retrieve it is converted to a base64 encoded string. In the frontend
 this data is then used as a data-uri to build up the image itself
 */
-var selectImageData = function selectImageData(uri, callback) {
+var selectImageData = function selectImageData(uri) {
     return db.documents.read('/binary/' + uri).result();
 };
 
