@@ -5,12 +5,10 @@ export var getGPSInformation = file => {
   var promise = new Promise((resolve, reject) => {
     new ExifImage({ image: file }, (error, exifData) => {
       if (error) {
-        console.log('Error with ExifImage library: ', error);
-        reject(new Error('Error', error));
+        reject(new Error(error));
       } else {
         if (Object.getOwnPropertyNames(exifData.gps).length === 0) {
-          console.log('No GPS information for image: ' + file);
-          resolve('No GPS information for image: ' + file);
+          reject(new Error('No GPS information for image: ' + file));
         } else {
           resolve(exifData.gps);
         }
@@ -24,7 +22,6 @@ export var getModelInformation = file => {
   var promise = new Promise((resolve, reject) => {
     new ExifImage({ image: file}, (error, exifData) => {
       if (error) {
-        console.log('Error with ExifImage library: ', error);
         reject(new Error('Error', error));
       } else {
         var match = exifData.exif.CreateDate.match(/^(\d+)\:(\d+)\:(\d+) (\d+)\:(\d+)\:(\d+)$/);

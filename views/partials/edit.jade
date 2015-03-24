@@ -29,11 +29,11 @@
               p #[strong Make and model]: {{ ::vm.image.make }} {{ ::vm.image.model }}
               p #[strong Created on]: {{ ::vm.image.created | dateSuffix  }}
               p #[strong Latitude]: {{ ::vm.image.location.coordinates[0] }} | #[strong Longitude]: {{ ::vm.image.location.coordinates[1] }}
-              hr(ng-show='vm.image.city && vm.image.country')
-              p(ng-show='vm.image.city && vm.image.country') #[strong Location] 
+              hr(ng-show='vm.image.location.city && vm.image.location.country')
+              p(ng-show='vm.image.location.city && vm.image.location.country') #[strong Location] 
                 a.mytooltip [?]
                   span Based on reverse geo-lookup
-                | : {{ ::vm.image.city }}, {{ ::vm.image.country }}
+                | : {{ ::vm.image.location.city }}, {{ ::vm.image.location.country }}
               hr
               small Original filename: {{ ::vm.image.filename }}
               

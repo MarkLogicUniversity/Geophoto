@@ -4,6 +4,7 @@ require('es6-promise').polyfill();
 
 export var makeRequest = location => {
   var promise = new Promise((resolve, reject) => {
+    var result = {};
     if (typeof location === 'object') {
       var options = {
         hostname: 'query.yahooapis.com',
@@ -13,8 +14,16 @@ export var makeRequest = location => {
       var request = http.request(options, response => {
         response.setEncoding('utf8');
         response.on('data', chunk => {
-          resolve(JSON.parse(chunk));
+          var data = JSON.parse(chunk);
+          result = {
+            city: data.query.results.Result.city,
+            country: data.query.results.Result.country,
+            latitude: location.latitude,
+            longitude: location.longitude
+          };
+          resolve(result);
         });
+
       });
 
       request.on('error', error => {
