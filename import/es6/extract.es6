@@ -1,6 +1,7 @@
 'use strict';
 require('es6-promise').polyfill();
 var ExifImage  = require('exif-makernote-fix').ExifImage;
+
 export var getGPSInformation = file => {
   var promise = new Promise((resolve, reject) => {
     new ExifImage({ image: file }, (error, exifData) => {

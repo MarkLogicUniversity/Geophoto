@@ -36,7 +36,7 @@ var makeRequest = function (location) {
 
       request.end();
     } else {
-      reject("Error: parameter is not of type location but ", typeof location);
+      reject("Error: parameter is not of type location but " + typeof location);
     }
   });
   return promise;

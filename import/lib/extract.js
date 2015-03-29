@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", {
 "use strict";
 require("es6-promise").polyfill();
 var ExifImage = require("exif-makernote-fix").ExifImage;
+
 var getGPSInformation = function (file) {
   var promise = new Promise(function (resolve, reject) {
     new ExifImage({ image: file }, function (error, exifData) {
