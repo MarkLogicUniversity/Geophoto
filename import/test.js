@@ -9,49 +9,64 @@ var connection = {
 require('es6-promise').polyfill();
 var db = marklogic.createDatabaseClient(connection);
 var qb = marklogic.queryBuilder;
-// get countries
+// // get countries
+//
+// function getCountries() {
+//   var countries = [];
+//   var promise = new Promise(function(resolve, reject) {
+//     db.documents.query(
+//       qb.where(
+//         qb.collection('image')
+//       )
+//       .orderBy(
+//         qb.sort('filename')
+//       )
+//       .slice(0,300) //return 300 documents "per page" (pagination)
+//     )
+//     .result()
+//     .then(function(documents) {
+//       documents.forEach(function(document) {
+//         countries.push(document.content.location.country.replace(" ", "_")); //also removing spaces
+//         resolve(countries);
+//       });
+//     });
+//   });
+//   return promise;
+// }
+//
+// var unique = function(array) {
+//     return array.reduce(function(accum, current) {
+//         if (accum.indexOf(current) < 0) {
+//             accum.push(current);
+//         }
+//         return accum;
+//     }, []);
+// };
+//
 
-function getCountries() {
-  var countries = [];
+
+// (1) Install the module in the modules database
+//     Note: You do not need to install on every invocation.
+//     It is included here to make the example self-contained.
+var moduleExists = function() {
   var promise = new Promise(function(resolve, reject) {
-    db.documents.query(
-      qb.where(
-        qb.collection('image')
-      )
-      .orderBy(
-        qb.sort('filename')
-      )
-      .slice(0,300) //return 300 documents "per page" (pagination)
-    )
-    .result()
-    .then(function(documents) {
-      documents.forEach(function(document) {
-        countries.push(document.content.location.country.replace(" ", "_")); //also removing spaces
-        resolve(countries);
-      });
+    db.config.extlibs.read('/ext/countriexxs.sjs').result()
+    .then(function(response) {
+      resolve(true);
+    }, function(error) {
+      resolve(false);
     });
   });
   return promise;
 }
 
-var unique = function(array) {
-    return array.reduce(function(accum, current) {
-        if (accum.indexOf(current) < 0) {
-            accum.push(current);
-        }
-        return accum;
-    }, []);
-};
-
-// (1) Install the module in the modules database
-//     Note: You do not need to install on every invocation.
-//     It is included here to make the example self-contained.
-db.config.extlibs.write({
-  path: '/countries.sjs',
-  contentType: 'application/vnd.marklogic-javascript',
-  source: fs.createReadStream('/Users/tamaspiros/Desktop/tamas/countries.sjs')
-}).result().then(function(response) {
-  console.log('Installed module: ' + response.path);
+moduleExists().then(function(data) { console.log(data); });
+// db.config.extlibs.write({
+//   path: '/countries.sjs',
+//   contentType: 'application/vnd.marklogic-javascript',
+//   source: fs.createReadStream('/Users/tamaspiros/Desktop/tamas/countries.sjs')
+// }).result().then(function(response) {
+//   console.log('Installed module: ' + response.path);
 
   // // (2) Invoke the module
   // getCountries().then(function(countries) {
@@ -69,9 +84,9 @@ db.config.extlibs.write({
   //
   // });
 
-}, function(error) {
-    console.log(JSON.stringify(error, null, 2));
-});
+// }, function(error) {
+//     console.log(JSON.stringify(error, null, 2));
+// });
 
 
 //

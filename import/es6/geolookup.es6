@@ -1,4 +1,8 @@
 'use strict';
+/*
+Model to do a reverse geolookup using the yahoo api
+*/
+
 var http = require('http');
 require('es6-promise').polyfill();
 

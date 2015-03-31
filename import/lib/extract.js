@@ -4,6 +4,10 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 "use strict";
+/*
+Module to extract GPS data and Model/Make/date information
+*/
+
 require("es6-promise").polyfill();
 var ExifImage = require("exif-makernote-fix").ExifImage;
 

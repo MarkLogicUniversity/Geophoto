@@ -1,5 +1,10 @@
 'use strict';
+/*
+Module to convert EXIF GPS data to decimal numbers
+*/
+
 require('es6-promise').polyfill();
+
 export var convertGPSData = location => {
   var promise = new Promise((resolve, reject) => {
     if (typeof location === 'object') {

@@ -4,7 +4,12 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 "use strict";
+/*
+Module to convert EXIF GPS data to decimal numbers
+*/
+
 require("es6-promise").polyfill();
+
 var convertGPSData = function (location) {
   var promise = new Promise(function (resolve, reject) {
     if (typeof location === "object") {

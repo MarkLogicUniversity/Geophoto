@@ -50,6 +50,9 @@ export var getCountries = () => {
         countries.push(document.content.location.country.replace(" ", "_")); //also removing spaces
         resolve(countries);
       });
+    })
+    .catch((error) => {
+      console.log(error);
     });
   });
   return promise;
