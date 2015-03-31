@@ -13,6 +13,9 @@ var marklogic = require('marklogic');
 var db = marklogic.createDatabaseClient(connection);
 var qb = marklogic.queryBuilder;
 
+/*
+this function tests for the existence of the module inserted
+*/
 var _moduleExists = () => {
   var promise = new Promise((resolve, reject) => {
     db.config.extlibs.read('/ext/countries.sjs').result()

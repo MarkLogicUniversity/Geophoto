@@ -22,6 +22,9 @@ var marklogic = require("marklogic");
 var db = marklogic.createDatabaseClient(connection);
 var qb = marklogic.queryBuilder;
 
+/*
+this function tests for the existence of the module inserted
+*/
 var _moduleExists = function () {
   var promise = new Promise(function (resolve, reject) {
     db.config.extlibs.read("/ext/countries.sjs").result().then(function (response) {
@@ -35,7 +38,6 @@ var _moduleExists = function () {
 
 var semantic = function () {
   _moduleExists().then(function (exists) {
-    console.log(exists);
     if (!exists) {
       db.config.extlibs.write({
         path: "/countries.sjs",
