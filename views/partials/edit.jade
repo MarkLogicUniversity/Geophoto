@@ -37,19 +37,24 @@
               hr
               small Original filename: {{ ::vm.image.filename }}
               hr
-              h3 Semantic Info
-              .panel.panel-primary
-                .panel-heading
-                  h3.panel-heading.panel-title(ng-show='vm.semantic.capital') {{ ::vm.semantic.capital }}, {{ ::vm.image.location.country }}
-                .panel-body
-                  p(ng-show='vm.semantic.imageFlag')
+          .col-md-12
+            h3 Semantic Info
+            .panel.panel-primary
+              .panel-heading
+                h3.panel-heading.panel-title(ng-show='vm.semantic.capital') {{ ::vm.semantic.capital }}, {{ ::vm.image.location.country }}
+              .panel-body
+                .col-md-4
+                  span(ng-show='vm.semantic.imageFlag')
                     img.img-rounded(ng-src='https://en.wikipedia.org/wiki/Special:FilePath/{{ ::vm.semantic.imageFlag }}?width=300') 
-                  p(ng-show='vm.semantic.imageMap') 
+                .col-md-4
+                  span(ng-show='vm.semantic.imageMap') 
                     img.img-rounded(ng-src='https://en.wikipedia.org/wiki/Special:FilePath/{{ ::vm.semantic.imageMap }}?width=300')
+                .col-md-4
                   p(ng-show='vm.semantic.homepage') #[strong Homepage]: {{ ::vm.semantic.homepage }}
                   p(ng-show='vm.semantic.anthem') #[strong Anthem]: {{ ::vm.semantic.anthem }}
                   p(ng-show='vm.semantic.currencyCode') #[strong Currency]: {{ ::vm.semantic.currencyCode }}
                   p(ng-show='vm.semantic.areaKm') #[strong Area]: {{ ::vm.semantic.areaKm }} km2
                   p(ng-show='vm.semantic.timeZone') #[strong Timezone]: {{ ::vm.semantic.timeZone }}
-                  p(ng-show='vm.semantic.abstract') {{ ::vm.semantic.abstract }}
-              
+                .col-md-12
+                  p.spaced(ng-show='vm.semantic.abstract') {{ ::vm.semantic.abstract }}
+            

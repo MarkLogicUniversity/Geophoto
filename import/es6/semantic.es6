@@ -28,11 +28,19 @@ var _moduleExists = () => {
   return promise;
 }
 
+var _countryExists = (country) => {
+  var sparqlQuery = [
+  'PREFIX db: <http://dbpedia.org/resource/> PREFIX onto: <http://dbpedia.org/ontology/>',
+  'ASK { db:' + country + ' ?p ?o }'
+  ];
+  return db.graphs.sparql('application/sparql-results+json', sparqlQuery.join('\n')).result();
+};
+
 export var semantic = () => {
   _moduleExists().then(function(exists) {
     if (!exists) {
       db.config.extlibs.write({
-        path: '/countries.sjs',
+        path: '/ext/countries.sjs',
         contentType: 'application/vnd.marklogic-javascript',
         source: fs.createReadStream('../../sjs/countries.sjs')
       }).result().then((response) => {
@@ -44,14 +52,20 @@ export var semantic = () => {
     database.getCountries().then((countries) => {
       var uniqueCountries = utils.unique(countries);
       uniqueCountries.forEach(function(uniqueCountry) {
-        console.log('Calling semantic info for: ' + uniqueCountry);
-        return db.invoke({
-          path: '/ext/countries.sjs',
-          variables: {country: uniqueCountry}
-        }).result((response) => {
-          console.log('RDF triple inserted ' + response[0].value);
-        }, (error) => {
-          console.log(JSON.stringify(error, null, 2));
+        _countryExists(uniqueCountry).then(function(result) {
+          if (!result.boolean) {
+            console.log('Calling semantic info for: ' + uniqueCountry);
+            return db.invoke({
+              path: '/ext/countries.sjs',
+              variables: {country: uniqueCountry}
+            }).result((response) => {
+              console.log('RDF triple inserted ' + response[0].value);
+            }, (error) => {
+              console.log(JSON.stringify(error, null, 2));
+            });
+          } else {
+            console.log(uniqueCountry + ' RDF triple already exists');
+          }
         });
       });
     });

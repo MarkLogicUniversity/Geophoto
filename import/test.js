@@ -9,6 +9,21 @@ var connection = {
 require('es6-promise').polyfill();
 var db = marklogic.createDatabaseClient(connection);
 var qb = marklogic.queryBuilder;
+
+
+var _countryExists = function(country) {
+  var sparqlQuery = [
+  'PREFIX db: <http://dbpedia.org/resource/> PREFIX onto: <http://dbpedia.org/ontology/>',
+  'ASK { db:' + country + ' ?p ?o }'
+  ];
+  return db.graphs.sparql('application/sparql-results+json', sparqlQuery.join('\n')).result();
+};
+
+_countryExists('Colombia').then(function(result) {
+  console.log(result.boolean);
+});
+
+
 // // get countries
 //
 // function getCountries() {
@@ -48,19 +63,19 @@ var qb = marklogic.queryBuilder;
 // (1) Install the module in the modules database
 //     Note: You do not need to install on every invocation.
 //     It is included here to make the example self-contained.
-var moduleExists = function() {
-  var promise = new Promise(function(resolve, reject) {
-    db.config.extlibs.read('/ext/countriexxs.sjs').result()
-    .then(function(response) {
-      resolve(true);
-    }, function(error) {
-      resolve(false);
-    });
-  });
-  return promise;
-}
-
-moduleExists().then(function(data) { console.log(data); });
+// var moduleExists = function() {
+//   var promise = new Promise(function(resolve, reject) {
+//     db.config.extlibs.read('/ext/countriexxs.sjs').result()
+//     .then(function(response) {
+//       resolve(true);
+//     }, function(error) {
+//       resolve(false);
+//     });
+//   });
+//   return promise;
+// }
+//
+// moduleExists().then(function(data) { console.log(data); });
 // db.config.extlibs.write({
 //   path: '/countries.sjs',
 //   contentType: 'application/vnd.marklogic-javascript',

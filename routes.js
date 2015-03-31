@@ -97,6 +97,7 @@ var search = function search(arg) {
   } else {
     return db.documents.query(
       qb.where(
+        qb.collection('image'),
         qb.term(arg)
       ).slice(0,300)
     ).result();

@@ -25,6 +25,9 @@ a, a:hover {
 .padded {
   padding-top: 10px;
 }
+.spaced {
+  margin-top: 15px;
+}
 .plain {
   font-weight: normal;
   color: #555;
