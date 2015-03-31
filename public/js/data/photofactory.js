@@ -13,7 +13,8 @@
         showImage: showImage,
         update: update,
         geoSearch: geoSearch,
-        textSearch: textSearch
+        textSearch: textSearch,
+        semanticData: semanticData
       };
 
       function showAllPhotos() {
@@ -55,6 +56,13 @@
       function textSearch(term) {
         return $http
           .get('/api/image/search/' + term)
+          .then(complete)
+          .catch(failed);
+      }
+
+      function semanticData(country) {
+        return $http
+          .get('/api/semantic/info/' + country)
           .then(complete)
           .catch(failed);
       }

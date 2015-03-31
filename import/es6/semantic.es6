@@ -37,7 +37,9 @@ export var semantic = () => {
         source: fs.createReadStream('../../sjs/countries.sjs')
       }).result().then((response) => {
         console.log('Installed module: ' + response.path);
-      });
+      }).catch((error => {
+        console.log('Error installing module ' + error);
+      }));
     }
     database.getCountries().then((countries) => {
       var uniqueCountries = utils.unique(countries);

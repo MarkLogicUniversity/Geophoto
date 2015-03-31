@@ -102,6 +102,30 @@ var search = function search(arg) {
     ).result();
   }
 };
+
+var semantic = function semantic(country) {
+  country = country.replace(' ', '_');
+  var query = [
+  'PREFIX db: <http://dbpedia.org/resource/>',
+  'PREFIX onto: <http://dbpedia.org/ontology/>',
+  'PREFIX foaf: <http://xmlns.com/foaf/0.1/>',
+  'PREFIX prop: <http://dbpedia.org/property/>',
+  'SELECT * ',
+  'WHERE {',
+  'OPTIONAL { db:' + country + ' onto:capital      ?capital . } ',
+  'OPTIONAL { db:' + country + ' prop:imageFlag    ?imageFlag . } ',
+  'OPTIONAL { db:' + country + ' prop:imageMap     ?imageMap . } ',
+  'OPTIONAL { db:' + country + ' foaf:homepage     ?homepagel . } ',
+  'OPTIONAL { db:' + country + ' onto:anthem       ?anthem . } ',
+  'OPTIONAL { db:' + country + ' prop:areaKm       ?areaKm . } ',
+  'OPTIONAL { db:' + country + ' prop:currencyCode ?currencyCode . } ',
+  'OPTIONAL { db:' + country + ' prop:timeZone     ?timeZone . } ',
+  'OPTIONAL { db:' + country + ' onto:abstract     ?abstract . }} '
+  ];
+
+  return db.graphs.sparql('application/sparql-results+json', query.join('\n'))
+  .result();
+};
 /*
 When specified the function below are making use of ExpressJS' req.params object
 that contains the URL parameters that are sent with the request so:
@@ -185,6 +209,31 @@ var apisearch = function(req, res) {
   }
 };
 
+var apisemantic = function(req, res) {
+  var country = req.params.country;
+  var options = ['capital', 'imageFlag', 'imageMap', 'homepage', 'anthem', 'areaKm', 'currencyCode', 'timeZone', 'abstract'];
+  var data = {};
+  var counter = 0;
+  semantic(country)
+  .then(function(result) {
+    options.forEach(function(option) {
+      counter++
+      if (result.results.bindings[0][option]) {
+        if (result.results.bindings[0][option].value.indexOf('http://') > -1) {
+          data[option] = result.results.bindings[0][option].value.split('/').pop();
+        } else {
+          data[option] = result.results.bindings[0][option].value
+        }
+        if (counter === options.length) {
+          res.json(data);
+        }
+      }
+    });
+  }, function(error) {
+    console.log(error);
+  });
+}
+
 var appindex = function(req, res) {
     res.render('index');
 };
@@ -207,6 +256,7 @@ module.exports = {
         image: apiimage,
         imagedata: apiimagedata,
         update: apiupdate,
-        search: apisearch
+        search: apisearch,
+        semantic: apisemantic
     }
 };

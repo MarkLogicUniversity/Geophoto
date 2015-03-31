@@ -15,6 +15,14 @@
       vm.image.title = data[0].content.title || data[0].content.filename;
       vm.image.description = data[0].content.description || 'No description yet.';
 
+      var country = data[0].content.location.country;
+      if (country) {
+        photofactory.semanticData(country).then(function(data) {
+          console.log(data);
+          vm.semantic = data;
+        });
+      }
+
       vm.updateTitle = function() {
         var update = {};
         update.title = vm.image.title;

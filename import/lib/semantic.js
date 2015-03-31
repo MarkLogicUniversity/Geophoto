@@ -45,6 +45,8 @@ var semantic = function () {
         source: fs.createReadStream("../../sjs/countries.sjs")
       }).result().then(function (response) {
         console.log("Installed module: " + response.path);
+      })["catch"](function (error) {
+        console.log("Error installing module " + error);
       });
     }
     database.getCountries().then(function (countries) {
