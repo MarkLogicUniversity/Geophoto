@@ -18,7 +18,6 @@
       var country = data[0].content.location.country;
       if (country) {
         photofactory.semanticData(country).then(function(data) {
-          console.log(data);
           vm.semantic = data;
         });
       }
