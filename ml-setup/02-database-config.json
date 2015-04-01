@@ -1,0 +1,42 @@
+{
+  "triple-index": true,
+  "uri-lexicon": true,
+  "collection-lexicon": true,
+
+  "geospatial-element-child-index": [
+    {
+      "parent-namespace-uri": "",
+      "parent-localname": "location",
+      "namespace-uri": "",
+      "localname": "coordinates",
+      "coordinate-system": "wgs84",
+      "point-format": "point",
+      "range-value-positions": false,
+      "invalid-values": "ignore"
+    }],
+    "range-element-index": [
+    {
+      "scalar-type": "string",
+      "namespace-uri": "",
+      "localname": "country",
+      "collation": "http://marklogic.com/collation/",
+      "range-value-positions": false,
+      "invalid-values": "reject"
+    },
+    {
+      "scalar-type": "string",
+      "namespace-uri": "",
+      "localname": "city",
+      "collation": "http://marklogic.com/collation/",
+      "range-value-positions": false,
+      "invalid-values": "reject"
+    },
+    {
+      "scalar-type": "string",
+      "namespace-uri": "",
+      "localname": "filename",
+      "collation": "http://marklogic.com/collation/",
+      "range-value-positions": false,
+      "invalid-values": "reject"
+    }]
+}

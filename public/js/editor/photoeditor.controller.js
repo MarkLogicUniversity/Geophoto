@@ -2,7 +2,7 @@
   'use strict';
 
   angular
-    .module('geofoto')
+    .module('geophoto')
     .controller('photoEditorController', photoEditorController);
 
     photoEditorController.$inject = ['$routeParams', '$location', 'photofactory', 'photo', 'data'];

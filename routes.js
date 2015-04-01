@@ -216,13 +216,19 @@ var apisemantic = function(req, res) {
   semantic(country)
   .then(function(result) {
     options.forEach(function(option) {
+      var check = '';
       counter++
       if (result.results.bindings[0][option]) {
-        if (result.results.bindings[0][option].value.indexOf('http://') > -1) {
-          data[option] = result.results.bindings[0][option].value.split('/').pop();
+
+        if (result.results.bindings[0][option].value.indexOf('_') > -1) {
+          var value = result.results.bindings[0][option].value.replace(/_/g, ' ');
+          if (value.indexOf('http://') > -1) {
+            data[option] = value.split('/').pop();
+          }
         } else {
           data[option] = result.results.bindings[0][option].value
         }
+
         if (counter === options.length) {
           res.json(data);
         }

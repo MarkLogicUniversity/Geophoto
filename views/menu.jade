@@ -9,19 +9,15 @@
       a.navbar-brand(href='/') Geophoto
     .collapse.navbar-collapse
       ul.nav.navbar-nav
-        li(ng-class='vm.isActive("#")')
+        li(ng-class='vm.isActive("/")')
           a(href='/') Home
         li(ng-class='vm.isActive("map")')
           a(href='#/map') Map
-        li
+        li(ng-class='vm.isActive("search")')
           a(class='dropdown-toggle', data-toggle='dropdown', role='button', aria-expanded='false') Search
             span(class='caret')
           ul(class='dropdown-menu', role='menu')
-            li
+            li(ng-class='vm.isActive("search")')
               a(href="#/geosearch") Geo Search
-            li
+            li(ng-class='vm.isActive("search")')
               a(href="#/textsearch") Text Search
-        li(ng-class='vm.isActive("explorer")')
-          a(href='#/explorer') Api Explorer
-        li(ng-class='vm.isActive("import")')
-          a(href='#/import') Import photos

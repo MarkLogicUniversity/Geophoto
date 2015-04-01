@@ -1,7 +1,7 @@
 (function() {
   'use strict';
   angular
-    .module('geofoto')
+    .module('geophoto')
     .controller('MapController', MapController);
 
     MapController.$inject = ['photofactory'];

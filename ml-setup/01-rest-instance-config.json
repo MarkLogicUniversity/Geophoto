@@ -1,0 +1,11 @@
+{
+  "rest-api":
+  {
+    "name": "5003-geophoto",
+    "group": "Default",
+    "database": "geophoto-content",
+    "modules-database": "geophoto-modules",
+    "port": "5003",
+    "forests-per-host": 1
+  }
+}

@@ -1,7 +1,7 @@
 (function() {
   'use strict';
   angular
-    .module('geofoto')
+    .module('geophoto')
     .filter('dateSuffix', dateSuffix);
 
     dateSuffix.$inject = ['$filter'];

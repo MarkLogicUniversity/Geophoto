@@ -1,0 +1,3 @@
+#This curl statement uses the MarkLogic REST API to configure the MarkLogic database with a few necessary indexes for this project.
+
+curl --anyauth --user admin:admin -X PUT -d@"PATH_TO_CONFIG_RELATIVE_TO_CURL/Geophoto/ml-setup/02-database-config.json" -i -H "Content-type: application/json" "http://localhost:8002/manage/v2/databases/geophoto-content/properties"

@@ -1,9 +1,9 @@
 .container
   .padded
-    p Please add a search term in the input box below:
+    p Please add a search term in the input box.
     form(role='form', class='form-inline', ng-submit='vm.search()', name='searchForm')
       .form-group
-        input(type='text', class='form-control', placeholder='Search term ...', ng-model='vm.term')
+        input(type='text', class='form-control', placeholder='Search term', ng-model='vm.term')
         button.btn.btn-default(type='submit') Search
   .results(ng-show='vm.results.length === 0 && searchForm.$submitted')
     p No results
