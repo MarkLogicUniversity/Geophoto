@@ -150,11 +150,9 @@ var apiimage = function(req, res) {
     selectOne(id).then(function(document) {
       if (document.length !== 0) {
         res.json(document);
-      } else {
-        // this 404 is captured via an AngularJS HTTP Interceptor
-        res.status(404).end();
       }
     }).catch(function(error) {
+      res.status(404).end();
       console.log('Error: ', error);
     });
 };

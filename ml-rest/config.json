@@ -1,10 +1,10 @@
 {
     "rest-api":
     {
-        "name": "mlu-jsconf-asia",
+        "name": "5003-geophoto",
         "group": "Default",
-        "database": "mlu-jsconf-asia-content",
-        "modules-database": "mlu-jsconf-asia-modules",
+        "database": "geophoto-content",
+        "modules-database": "geophoto-modules",
         "port": "5003"
     }
 }
