@@ -10,7 +10,7 @@ export var getGPSInformation = file => {
   var promise = new Promise((resolve, reject) => {
     new ExifImage({ image: file }, (error, exifData) => {
       if (error) {
-        reject(new Error(error));
+        reject(console.log(error));
       } else {
         if (Object.getOwnPropertyNames(exifData.gps).length === 0) {
           reject(new Error('No GPS information for image: ' + file));
@@ -27,7 +27,7 @@ export var getModelInformation = file => {
   var promise = new Promise((resolve, reject) => {
     new ExifImage({ image: file}, (error, exifData) => {
       if (error) {
-        reject(new Error('Error', error));
+        reject(console.log(error));
       } else {
         var match = exifData.exif.CreateDate.match(/^(\d+)\:(\d+)\:(\d+) (\d+)\:(\d+)\:(\d+)$/);
         var created = new Date(match[1], match[2] - 1, match[3], match[4], match[5], match[6]).getTime();

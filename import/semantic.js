@@ -47,7 +47,7 @@ var semantic = function () {
       db.config.extlibs.write({
         path: "/ext/countries.sjs",
         contentType: "application/vnd.marklogic-javascript",
-        source: fs.createReadStream("../../sjs/countries.sjs")
+        source: fs.createReadStream("../sjs/countries.sjs")
       }).result().then(function (response) {
         console.log("Installed module: " + response.path);
       })["catch"](function (error) {

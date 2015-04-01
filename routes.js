@@ -16,10 +16,10 @@ e.g.
 {
   "filename": "IMG_6193.jpg",
   "location": {
-  "type": "Point",
-  "coordinates": [
-    43.7385,
-    7.429167
+    "type": "Point",
+    "coordinates": [
+      43.7385,
+      7.429167
     ]
   },
   "binary": "/binary/IMG_6193.jpg"

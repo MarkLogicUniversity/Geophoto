@@ -12,10 +12,11 @@ require("es6-promise").polyfill();
 var ExifImage = require("exif-makernote-fix").ExifImage;
 
 var getGPSInformation = function (file) {
+  console.log("GPS " + file);
   var promise = new Promise(function (resolve, reject) {
     new ExifImage({ image: file }, function (error, exifData) {
       if (error) {
-        reject(new Error(error));
+        reject(console.log(error));
       } else {
         if (Object.getOwnPropertyNames(exifData.gps).length === 0) {
           reject(new Error("No GPS information for image: " + file));
@@ -30,10 +31,11 @@ var getGPSInformation = function (file) {
 
 exports.getGPSInformation = getGPSInformation;
 var getModelInformation = function (file) {
+  console.log("Model " + file);
   var promise = new Promise(function (resolve, reject) {
     new ExifImage({ image: file }, function (error, exifData) {
       if (error) {
-        reject(new Error("Error", error));
+        reject(console.log(error));
       } else {
         var match = exifData.exif.CreateDate.match(/^(\d+)\:(\d+)\:(\d+) (\d+)\:(\d+)\:(\d+)$/);
         var created = new Date(match[1], match[2] - 1, match[3], match[4], match[5], match[6]).getTime();

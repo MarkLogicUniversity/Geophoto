@@ -1,4 +1,4 @@
-<export><workspace name="geospatial"><query name="open document" focus="false" active="true" mode="javascript">fn.doc('/image/IMG_4457.jpg.json');</query><query name="geospatial search/xquery" focus="false" active="true" mode="xquery">(:  cts:search(
+<export><workspace name="Geophoto"><query name="open document" focus="false" active="true" mode="javascript">fn.doc('/image/IMG_4457.jpg.json');</query><query name="geospatial search/xquery" focus="false" active="true" mode="xquery">(:  cts:search(
     fn:doc(),
     cts:path-geospatial-query(
       "/location/coordinates",
@@ -16,21 +16,7 @@ xdmp:plan(
       cts:circle(3.5, cts:point(10.4000, -75.5000))
     )
   )
-);</query><query name="Query 5" focus="false" active="false" mode="javascript">declareUpdate();
-
-function map(itr, f) {
-  while(true) {
-   var item = itr.next()
-   if(item.done) break;
-   f(item.value.root)
-  }
-}
-
-var itr = fn.doc('/image/IMG_0132.JPG.json');
-map(itr, function(item) {
-  var obj = { 'title': 'Colosseum' };
-  xdmp.nodeReplace(item.filename, obj);
-});</query><query name="js-plan" focus="false" active="true" mode="javascript">cts.plan(
+);</query><query name="js-plan" focus="false" active="true" mode="javascript">cts.plan(
   cts.jsonPropertyChildGeospatialQuery(
     "location",
     "coordinates",
@@ -42,29 +28,4 @@ map(itr, function(item) {
     "coordinates",
     cts.circle(5.5, cts.point(10.4000, -75.5000)) //Cartagena, Colombia
   )
-);</query><query name="simple js-cts-search" focus="false" active="true" mode="javascript">cts.search('Medellin')</query><query name="city/country info" focus="true" active="true" mode="javascript">declareUpdate();
-
-for (var doc of fn.collection('image')) {
-  var lat = doc.toObject().location.coordinates[0];
-  var lon = doc.toObject().location.coordinates[1];
-  var uri = xdmp.nodeUri(doc);
-  var collections = xdmp.documentGetCollections(uri);
-  var obj = doc.toObject();
-  getCityCountry(lat, lon, function(geodata) {
-    obj.city = geodata.city;
-    obj.country = geodata.country;
-    xdmp.documentInsert(uri, obj, xdmp.defaultPermissions(), collections);
-  });
-}
-
-function getCityCountry(lat, lon, callback) {
-  var it = xdmp.httpGet('http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20geo.placefinder%20where%20text%3D%22'+lat+'%2C'+lon+'%22%20and%20gflags%3D%22R%22&amp;format=json');
-  var header = it.next(); //we can ignore this because httpGet returns a value iterator
-  var result = it.next(); //we need the second valueset
-  var city = result.value.toObject().query.results.Result.city;
-  var country = result.value.toObject().query.results.Result.country;
-  var geodata = {}; //create object to store city and country data
-  geodata.city = city;
-  geodata.country = country;
-  callback(geodata); //send back the object
-}</query></workspace></export>
+);</query><query name="simple js-cts-search" focus="false" active="true" mode="javascript">cts.search('Medellin')</query></workspace></export>
