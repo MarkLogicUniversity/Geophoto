@@ -12,7 +12,6 @@ require("es6-promise").polyfill();
 var ExifImage = require("exif-makernote-fix").ExifImage;
 
 var getGPSInformation = function (file) {
-  console.log("GPS " + file);
   var promise = new Promise(function (resolve, reject) {
     new ExifImage({ image: file }, function (error, exifData) {
       if (error) {
@@ -31,7 +30,6 @@ var getGPSInformation = function (file) {
 
 exports.getGPSInformation = getGPSInformation;
 var getModelInformation = function (file) {
-  console.log("Model " + file);
   var promise = new Promise(function (resolve, reject) {
     new ExifImage({ image: file }, function (error, exifData) {
       if (error) {
