@@ -1,5 +1,5 @@
 'use strict';
-process.env.NODE_ENV = 'development';
+//process.env.NODE_ENV = 'development';
 
 var express        = require('express');
 var bodyParser     = require('body-parser');
@@ -20,9 +20,9 @@ app.use(bodyParser.json({extended: true}));
 
 app.use(methodOverride());
 
-if (app.get('env') === 'development') {
-  app.locals.pretty = true;
-}
+// if (app.get('env') === 'development') {
+//   app.locals.pretty = true;
+// }
 
 /*
 Basic route configuration
