@@ -1,9 +1,10 @@
 'use strict';
-//process.env.NODE_ENV = 'development';
+process.env.NODE_ENV = 'development';
 
 var express        = require('express');
 var bodyParser     = require('body-parser');
 var methodOverride = require('method-override');
+var path           = require('path');
 var app            = express();
 var router         = express.Router();
 var routes         = require('./routes').app;
@@ -12,17 +13,16 @@ var apiroutes      = require('./routes').api;
 app.set('port', 3000);
 app.set('view engine', 'jade');
 app.use('/components', express.static(__dirname + '/components'));
-app.use('/public', express.static(__dirname + '/public'));
-app.use('/workarea', express.static(__dirname + '/workarea'));
+app.use('/public', express.static(path.normalize(path.join(__dirname, '/public'))));
 app.use('/views', express.static(__dirname + '/views'));
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json({extended: true}));
 
 app.use(methodOverride());
 
-// if (app.get('env') === 'development') {
-//   app.locals.pretty = true;
-// }
+if (app.get('env') === 'development') {
+  app.locals.pretty = true;
+}
 
 /*
 Basic route configuration
