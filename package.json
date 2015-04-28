@@ -4,7 +4,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "./node_modules/bower/bin/bower install"
+    "postinstall": "node ./node_modules/bower/bin/bower install"
   },
   "author": "Tamas Piros",
   "license": "MIT",
@@ -20,7 +20,6 @@
     "gulp-minify-css": "~0.3.7",
     "gulp-rename": "~1.2.0",
     "jade": "^1.5.0",
-    "lodash": "^2.4.1",
     "marklogic": "1.0.1",
     "method-override": "^2.1.2"
   }
