@@ -10,7 +10,7 @@ var router         = express.Router();
 var routes         = require('./routes').app;
 var apiroutes      = require('./routes').api;
 
-app.set('port', 3000);
+app.set('port', 4000);
 app.set('view engine', 'jade');
 app.use('/components', express.static(__dirname + '/components'));
 app.use('/public', express.static(path.normalize(path.join(__dirname, '/public'))));
