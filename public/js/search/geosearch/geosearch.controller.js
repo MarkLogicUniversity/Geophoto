@@ -10,6 +10,7 @@
       var vm = this;
       vm.searching = false;
       var circle;
+      var tmpMarkers    = [];
 
       var mapOptions = {
         zoom: 2,
@@ -40,6 +41,78 @@
 
       google.maps.event.addListener(drawingManager, 'circlecomplete', onCircleComplete);
 
+      var createMarker = function(photoData) {
+        var latitude  = photoData.location.coordinates[0];
+        var longitude = photoData.location.coordinates[1];
+        var title     = photoData.title || photoData.filename;
+        var marker    = {
+          map: vm.map,
+          position: new google.maps.LatLng(latitude, longitude),
+          id: photoData.filename,
+          data: photoData,
+          title: title
+        };
+        var point     = new google.maps.Marker(marker);
+
+        tmpMarkers.push(point);
+        vm.markers = tmpMarkers;
+
+        google.maps.event.addListener(point, 'click', function() {
+          photofactory.showImage(photoData.filename)
+          .then(function(binaryData) {
+            infoWindow.setContent('<div class="infoWindowHeader"><span class="title">' + marker.title + '</span> <span><a href="#/edit/' + marker.id + '" class="btn btn-warning btn-xs"><i class="glyphicon glyphicon-pencil"></i></a></span></div>' + '<div class="infoWindowContent"><img class="img-rounded" src="data:image/jpg;base64,' + binaryData + '"></div>');
+            infoWindow.open(vm.map, point);
+          });
+        });
+      };
+
+      var deleteAllMarkers = function() {
+        if (vm.markers) {
+          for(var i = 0, max = tmpMarkers.length;  i < max; i++) {
+            tmpMarkers[i].setMap(null);
+          }
+          tmpMarkers = [];
+        }
+      }
+
+      function onCircleChanged() {
+        var radius = Math.round(circle.getRadius() * 0.000621371192);
+        var lat = circle.getCenter().lat();
+        var lng = circle.getCenter().lng();
+        var search = {
+          radius: radius,
+          lat: lat,
+          lng: lng
+        };
+
+        // initiate the search again
+        geoSearch(search);
+      }
+
+      function onPointChanged() {
+        var radius = Math.round(circle.getRadius() * 0.000621371192);
+        var lat = circle.getCenter().lat();
+        var lng = circle.getCenter().lng();
+        var search = {
+          radius: radius,
+          lat: lat,
+          lng: lng
+        };
+        // initiate the search again
+        geoSearch(search);
+      }
+
+      function geoSearch(object) {
+        vm.searching = true;
+        photofactory.geoSearch(object).then(function(data) {
+          vm.results = data;
+          deleteAllMarkers();
+          for (var i = 0, max = data.length; i < max; i++) {
+              createMarker(data[i].content);
+          }
+        });
+      }
+
       function onCircleComplete(shape) {
         if (shape == null || (!(shape instanceof google.maps.Circle))) return;
 
@@ -60,44 +133,11 @@
 
         // radius_changed event listener (https://developers.google.com/maps/documentation/javascript/shapes)
         google.maps.event.addListener(shape, 'radius_changed', onCircleChanged);
-        function onCircleChanged() {
-          var radius = Math.round(circle.getRadius() * 0.000621371192);
-          var lat = circle.getCenter().lat();
-          var lng = circle.getCenter().lng();
-          var search = {
-            radius: radius,
-            lat: lat,
-            lng: lng
-          };
-          // initiate the search again
-          geoSearch(search);
-        }
-
         // center_changed event listener
         google.maps.event.addListener(shape, 'center_changed', onPointChanged);
 
-        function onPointChanged() {
-          var radius = Math.round(circle.getRadius() * 0.000621371192);
-          var lat = circle.getCenter().lat();
-          var lng = circle.getCenter().lng();
-          var search = {
-            radius: radius,
-            lat: lat,
-            lng: lng
-          };
-
-          // initiate the search again
-          geoSearch(search);
-        }
-
         geoSearch(search);
 
-        function geoSearch(object) {
-          vm.searching = true;
-          photofactory.geoSearch(object).then(function(data) {
-            vm.results = data;
-          });
-        }
       }
     }
 })();

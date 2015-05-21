@@ -19,21 +19,21 @@
 
       function showAllPhotos() {
         return $http
-          .get('/api')
+          .get('/api', {cache: true})
           .then(complete)
           .catch(failed);
       }
 
       function showOnePhoto(id) {
         return $http
-          .get('/api/image/' + id)
+          .get('/api/image/' + id, {cache: true})
           .then(complete)
           .catch(failed);
       }
 
       function showImage(id) {
         return $http
-          .get('/api/imagedata/' + id)
+          .get('/api/imagedata/' + id, {cache: true})
           .then(complete)
           .catch(failed);
       }
@@ -62,7 +62,7 @@
 
       function semanticData(country) {
         return $http
-          .get('/api/semantic/info/' + country)
+          .get('/api/semantic/info/' + country, {cache: true})
           .then(complete)
           .catch(failed);
       }

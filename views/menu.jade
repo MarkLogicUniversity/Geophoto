@@ -1,4 +1,4 @@
-.navbar.navbar-default.navbar-fixed-top(role='navigation', ng-controller='NavigationController')
+.navbar.navbar-default.navbar-fixed-top(role='navigation', bs-navbar)
   .container
     .navbar-header
       button.navbar-toggle(type='button', data-toggle='collapse', data-target='.navbar-collapse')
@@ -6,18 +6,18 @@
         span.icon-bar
         span.icon-bar
         span.icon-bar
-      a.navbar-brand(href='/') Geophoto
+      a.navbar-brand(href='#/') Geophoto
     .collapse.navbar-collapse
       ul.nav.navbar-nav
-        li(ng-class='vm.isActive("/")')
-          a(href='/') Home
-        li(ng-class='vm.isActive("map")')
+        li(match-route='/')
+          a(href='#/') Home
+        li(match-route='/map|/edit/.*')
           a(href='#/map') Map
-        li(ng-class='vm.isActive("search")')
+        li(match-route='/geosearch|/textsearch')
           a(class='dropdown-toggle', data-toggle='dropdown', role='button', aria-expanded='false') Search
             span(class='caret')
           ul(class='dropdown-menu', role='menu')
-            li(ng-class='vm.isActive("search")')
+            li(match-route='/geosearch')
               a(href="#/geosearch") Geo Search
-            li(ng-class='vm.isActive("search")')
+            li(match-route='/textsearch')
               a(href="#/textsearch") Text Search

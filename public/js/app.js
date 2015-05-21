@@ -42,18 +42,33 @@
           controllerAs: 'vm',
           //resolve the photo route - only display this partial when image has loaded
           resolve: {
-            data: function(photofactory, $route) {
-              var id = $route.current.params.id
-              return photofactory.showOnePhoto(id);
-            },
-            photo: function(photofactory, $route) {
+            data: function($cacheFactory, $route, photofactory) {
               var id = $route.current.params.id;
-              return photofactory.showImage(id);
+              var cache = $cacheFactory.get('$http');
+              var dataCache = cache.get('/api/image/' + id);
+              if (!dataCache) {
+                var data = photofactory.showOnePhoto(id);
+                return data;
+              } else {
+                return JSON.parse(dataCache[1]);
+              }
+
+            },
+            photo: function($cacheFactory, $route, photofactory) {
+              var id = $route.current.params.id;
+              var cache = $cacheFactory.get('$http');
+              var binaryCache = cache.get('/api/imagedata/' + id);
+              if (!binaryCache) {
+                var data = photofactory.showImage(id);
+                return data;
+              } else {
+                return JSON.parse(binaryCache[1]);
+              }
             }
           }
         }).
         when('/404', {
-          templateUrl: 'partials/404'
+          templateUrl: '/partials/404'
         })
         .otherwise({
           redirectTo: '/'
