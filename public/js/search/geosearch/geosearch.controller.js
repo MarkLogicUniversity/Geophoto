@@ -8,6 +8,7 @@
 
     function geoSearchController(photofactory) {
       var vm = this;
+      var infoWindow    = new google.maps.InfoWindow();
       vm.searching = false;
       var circle;
       var tmpMarkers    = [];
@@ -65,6 +66,8 @@
           });
         });
       };
+
+
 
       var deleteAllMarkers = function() {
         if (vm.markers) {
