@@ -43,7 +43,6 @@
                     | : {{ ::vm.image.location.city }}, {{ ::vm.image.location.country }}
                   hr
                   small Original filename: {{ ::vm.image.filename }}
-                  p {{ vm.image.location.coordinates[0] | json}}
                 #map.tab-pane(role='tabpanel')
                   img(src='https://maps.googleapis.com/maps/api/staticmap?center={{vm.image.location.coordinates[0]}},{{vm.image.location.coordinates[1]}}&zoom=15&markers=color:red|{{vm.image.location.coordinates[0]}},{{vm.image.location.coordinates[1]}}&size=400x400')
           .col-md-12
