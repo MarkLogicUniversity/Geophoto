@@ -1,19 +1,22 @@
 // Setting up the Database for the Geophoto application, including the indexes
 var request = require('request');
 var Promise = require('bluebird');
-var fs = require('fs');
+var fs = Promise.promisifyAll(require("fs"));
 var path = require('path');
 
 var username="admin"; // update if required
 var password="admin"; // update if required
 
 function readFile(filename, enc){
-  return new Promise(function (fulfill, reject){
-    fs.readFile(__dirname + path.sep + filename, enc, function (err, res){
-      if (err) reject(err);
-      else fulfill(res);
-    });
-  });
+  return fs.readFileAsync(__dirname + path.sep + filename, enc);
+}
+
+function getAuth() {
+  return {
+    user: username,
+    password: password,
+    sendImmediately: false
+  };
 }
 
 function applyConfig(path, method, config) {
@@ -22,11 +25,7 @@ function applyConfig(path, method, config) {
       {
         url: 'http://localhost:8002' + path,
         method: method,
-        auth: {
-          user: username,
-          password: password,
-          sendImmediately: false
-        },
+        auth: getAuth(),
         headers: {
           'Content-type': 'application/json'
         },
