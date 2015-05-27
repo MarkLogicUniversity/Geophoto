@@ -1,12 +1,11 @@
 // Setting up the Database for the Geophoto application, including the indexes
-var request = require('request');
 var Promise = require('bluebird');
 var fs = Promise.promisifyAll(require("fs"));
 var path = require('path');
-var prequest = Promise.promisify(require("request"));
+var request = Promise.promisify(require("request"));
 
-var username="admin"; // update if required
-var password="admin"; // update if required
+var username='admin'; // update if required
+var password='admin'; // update if required
 
 function readFile(filename, enc){
   return fs.readFileAsync(__dirname + path.sep + filename, enc);
@@ -21,50 +20,25 @@ function getAuth() {
 }
 
 function applyConfig(path, method, config) {
-  return new Promise(function (fulfill, reject) {
-    request(
-      {
-        url: 'http://localhost:8002' + path,
-        method: method,
-        auth: getAuth(),
-        headers: {
-          'Content-type': 'application/json'
-        },
-        json: config
+  return request(
+    {
+      url: 'http://localhost:8002' + path,
+      method: method,
+      auth: getAuth(),
+      headers: {
+        'Content-type': 'application/json'
       },
-      function(error, response, body) {
-        var code = response.statusCode;
-
-        if (code >= 200 && code < 300) {
-          fulfill(response);
-        }
-
-        reject(body);
-      }
-    );
-  });
+      json: config
+    });
 }
 
 // Check whether the REST API application server has already been made
 function checkForAppServer(restConfig) {
-  return prequest
+  return request
     ({
       url: 'http://localhost:8002/v1/rest-apis/' + restConfig['rest-api'].name,
       auth: getAuth()
     });
-}
-
-// If the app server does not already exist, create it and the databases that
-// go with it. The response parameter is the response to a request to get
-// information about the app server.
-function createIfNeeded(response) {
-  if (response[0].statusCode === 404) {
-    // the Application Server has not already been set up
-    console.log('Setting up the application server and the databases - ');
-    return applyConfig('/v1/rest-apis', 'POST', restConfig.value());
-  } else {
-    console.log('App server already setup; skipping');
-  }
 }
 
 // Create the application server and the content and modules databases. 
@@ -74,7 +48,25 @@ function bootstrap() {
       .then(JSON.parse);
 
   restConfig.then(checkForAppServer)
-    .then(createIfNeeded)
+    .then(function (response) {
+      // If the app server does not already exist, create it and the databases
+      // that go with it.
+
+      if (response[0].statusCode === 404) {
+        // the Application Server has not already been set up
+        console.log('Setting up the application server and the databases - ');
+        return applyConfig('/v1/rest-apis', 'POST', restConfig.value());
+      } else if (response[0].statusCode === 200) {
+        console.log('App server already setup; skipping');
+      } else {
+        throw {
+          errorResponse: {
+            statusCode: response[0].statusCode,
+            message: response[0].message
+          }
+        };
+      }
+    })
     .then(function() { return readFile('02-database-config.json'); })
     .then(JSON.parse)
     .then(function(dbConfig) {
@@ -83,11 +75,15 @@ function bootstrap() {
     })
     .catch(
       function (error) {
-        if (typeof error === 'object') {
-          console.log('Problem: ' + error.errorResponse.statusCode + '; ' + error.errorResponse.message);
+        if (typeof error.errorResponse !== 'undefined') {
+          console.log('Setup failed: ' + error.errorResponse.statusCode + '; ' + error.errorResponse.message);
         } else {
-          console.log('Problem: ' + error);
+          console.log('Setup failed: ' + error);
         }
+      })
+    .done(
+      function() {
+        console.log('Bootstrap complete.');
       });
 }
 
