@@ -6,6 +6,9 @@ var request = Promise.promisify(require("request"));
 
 var username = 'admin'; // update if required
 var password = 'admin'; // update if required
+var hostname = 'localhost';
+var port = 8002;
+var baseURL = 'http://' + hostname + ':' + port;
 
 function readFile(filename, enc){
   return fs.readFileSync(__dirname + path.sep + filename, enc);
@@ -22,7 +25,7 @@ function getAuth() {
 function applyConfig(path, method, config) {
   return request(
     {
-      url: 'http://localhost:8002' + path,
+      url: baseURL + path,
       method: method,
       auth: getAuth(),
       headers: {
@@ -36,7 +39,7 @@ function applyConfig(path, method, config) {
 function checkForAppServer(restConfig) {
   return request
     ({
-      url: 'http://localhost:8002/v1/rest-apis/' + restConfig['rest-api'].name,
+      url: baseURL + '/v1/rest-apis/' + restConfig['rest-api'].name,
       auth: getAuth()
     });
 }
