@@ -1,14 +1,14 @@
 // Setting up the Database for the Geophoto application, including the indexes
 var Promise = require('bluebird');
-var fs = Promise.promisifyAll(require("fs"));
+var fs = require("fs");
 var path = require('path');
 var request = Promise.promisify(require("request"));
 
-var username='admin'; // update if required
-var password='admin'; // update if required
+var username = 'admin'; // update if required
+var password = 'admin'; // update if required
 
 function readFile(filename, enc){
-  return fs.readFileAsync(__dirname + path.sep + filename, enc);
+  return fs.readFileSync(__dirname + path.sep + filename, enc);
 }
 
 function getAuth() {
@@ -43,11 +43,9 @@ function checkForAppServer(restConfig) {
 
 // Create the application server and the content and modules databases. 
 function bootstrap() {
-  var restConfig =
-    readFile('01-rest-instance-config.json')
-      .then(JSON.parse);
+  var restConfig = JSON.parse(readFile('01-rest-instance-config.json'));
 
-  restConfig.then(checkForAppServer)
+  checkForAppServer(restConfig)
     .then(function (response) {
       // If the app server does not already exist, create it and the databases
       // that go with it.
@@ -55,10 +53,11 @@ function bootstrap() {
       if (response[0].statusCode === 404) {
         // the Application Server has not already been set up
         console.log('Setting up the application server and the databases - ');
-        return applyConfig('/v1/rest-apis', 'POST', restConfig.value());
+        return applyConfig('/v1/rest-apis', 'POST', restConfig);
       } else if (response[0].statusCode === 200) {
         console.log('App server already setup; skipping');
       } else {
+        // Something else went wrong
         throw {
           errorResponse: {
             statusCode: response[0].statusCode,
@@ -67,10 +66,9 @@ function bootstrap() {
         };
       }
     })
-    .then(function() { return readFile('02-database-config.json'); })
-    .then(JSON.parse)
-    .then(function(dbConfig) {
+    .then(function() {
       console.log('Setting up the indexes - ');
+      var dbConfig = JSON.parse(readFile('02-database-config.json'));
       return applyConfig('/manage/v2/databases/geophoto-content/properties', 'PUT', dbConfig);
     })
     .catch(
@@ -87,15 +85,12 @@ function bootstrap() {
       });
 }
 
-// Remove the application completely
+// Remove the application from MarkLogic completely
 function wipe() {
-  readFile('01-rest-instance-config.json')
-    .then(
-      function (restConfig) {
-        var config = JSON.parse(restConfig);
-        console.log('Removing application server and the databases.');
-        return applyConfig('/v1/rest-apis/' + config['rest-api'].name + '?include=content&include=modules', 'DELETE', null);
-      })
+  var restConfig = JSON.parse(readFile('01-rest-instance-config.json'));
+
+  console.log('Removing application server and the databases.');
+  applyConfig('/v1/rest-apis/' + restConfig['rest-api'].name + '?include=content&include=modules', 'DELETE', null)
     .catch(function (error) {
       console.log('Wipe failed: ' + error.errorResponse.statusCode + '; ' + error.errorResponse.message);
     });
