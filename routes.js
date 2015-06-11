@@ -5,6 +5,7 @@ var marklogic  = require('marklogic');
 var connection = require('./dbsettings').connection;
 var db         = marklogic.createDatabaseClient(connection);
 var qb         = marklogic.queryBuilder;
+var pb         = marklogic.patchBuilder;
 /*
 function to select all documents from the database - the query is restricted to
 retrieve images from the 'image' collection. The 'image' collection consists of
@@ -55,23 +56,30 @@ the title of an image.
 */
 var updateDocument = function(uri, update) {
   update = JSON.parse(update);
-  var description = update.description;
-  var newDocument = {};
-  return db.documents.read('/image/' + uri + '.json')
-  .result()
-  .then(function(document) {
-    if (update.title) {
-      var title = update.title;
-      document[0].content.title = title;
-    }
-    if (description) {
-      document[0].content.description = description;
-    }
-    newDocument = document[0].content;
-    document[0].collections = ['image'];
-    return db.documents.write(document[0])
-      .result();
-  });
+
+  var ops = [];
+  if (update.title) {
+    ops.push(pb.replaceInsert(
+        '/title',
+        '/',
+        'last-child',
+        update.title
+      ));
+  }
+  if (update.description) {
+    ops.push(pb.replaceInsert(
+        '/description',
+        '/',
+        'last-child',
+        update.description
+      ));
+  }
+
+  return db.documents.patch(
+      '/image/' + uri + '.json',
+      ops
+    )
+  .result();
 };
 
 /* This function is responsible for doing a geospatial search
