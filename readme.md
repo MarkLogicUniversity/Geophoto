@@ -31,21 +31,12 @@ There are a few steps that you need to do in order to get up and running with th
 ###MarkLogic Server
 It is assumed that you already have the MarkLogic Server installed. If you require help please [download MarkLogic](http://developer.marklogic.com/products) and read our [installation guide](http://docs.marklogic.com/guide/installation/procedures#id_28962).
 
+Geophoto uses Node.js to call the [Management API](http://docs.marklogic.com/REST/management) to set up the application server and databases needed. To run this script, change directories to `ml-setup`, then run `node setup.js`. 
 
-###For Linux and Mac users
-If you're running a Linux or Mac OS you can navigate to the ml-setup folder and simply execute the script found in that folder:
-`# cd ml-setup; chmod a+x setup.sh;  ./setup.sh`
+    cd ml-setup
+    node setup.js
 
-This will execute a series of curl statements that will create the right application server & databases as well as enable the appropriate indexes that are required by the server.
-
-###For Windows users
-If you're running on a Windows environment please navigate to the ml-setup folder and open both of the `.txt` files in there and update the path to the json files (which need to be relative to where you have your curl installed). For example if your curl installation is under 'c:/curl/' (i.e. curl.exe is under that folder) you'd have to update this line with the right details pointing to the configuration JSON file.
-
-`curl --digest --user admin:admin -X POST -d@"PATH_TO_CONFIG_RELATIVE_TO_CURL/Geophoto/ml-setup/01-rest-instance-config.json" -i -H "Content-type:application/json" http://localhost:8002/v1/rest-apis`
-
-(Please do this for the curl statements in both .txt files)
-
-Once you have the right paths in place, please execute both of the curl statements.
+> Note that `setup.js` assumes a default local installation, where the Management API is available at http://localhost:8002. If deploying to a remote server, or if you need to change the admin username or password, edit setup.js before running. 
 
 ##Data import
 The import script can be found under the folder named 'import' and it's called `import.js`.
@@ -97,6 +88,6 @@ Before starting the application please make sure that you have the right connect
 	
 (note that this file is **different** from the connection file that the import script is using)
 
-To start the application nagivate to the project's root folder and execute the following command: `node app.js` - this should start up an Express server on port 3000 which means that navigating to localhost:3000 would show the main page of the application.
+To start the application nagivate to the project's root folder and execute the following command: `node app.js` - this should start up an Express server on port 4000 which means that navigating to localhost:4000 would show the main page of the application.
 
-If port 3000 is not available you can always open up `app.js` and modify the following line `app.set('port', 3000);` and use a desired port number.
+If port 4000 is not available you can always open up `app.js` and modify the following line `app.set('port', 4000);` and use a desired port number.
