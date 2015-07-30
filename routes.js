@@ -56,22 +56,24 @@ the title of an image.
 */
 var updateDocument = function(uri, update) {
   update = JSON.parse(update);
-  var newDocument = {};
-  return db.documents.read('/image/' + uri + '.json')
-  .result()
-  .then(function(document) {
-    if (update.title) {
-      var title = update.title;
-      document[0].content.title = title;
-    }
-    if (update.description) {
-      document[0].content.description = update.description;
-    }
-    newDocument = document[0].content;
-    document[0].collections = ['image'];
-    return db.documents.write(document[0])
-      .result();
-  });
+
+  var ops = [];
+  if (update.title) {
+    ops.push(
+      pb.replaceInsert('/title', '/filename', 'after', { title: update.title })
+    );
+  }
+  if (update.description) {
+    ops.push(
+      pb.replaceInsert('/description', '/filename', 'after', { description: update.description })
+    );
+  }
+
+  return db.documents.patch(
+      '/image/' + uri + '.json',
+      ops
+    )
+  .result();
 };
 
 /* This function is responsible for doing a geospatial search
