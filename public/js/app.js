@@ -53,17 +53,6 @@
                 return JSON.parse(dataCache[1]);
               }
 
-            },
-            photo: function($cacheFactory, $route, photofactory) {
-              var id = $route.current.params.id;
-              var cache = $cacheFactory.get('$http');
-              var binaryCache = cache.get('/api/imagedata/' + id);
-              if (!binaryCache) {
-                var data = photofactory.showImage(id);
-                return data;
-              } else {
-                return JSON.parse(binaryCache[1]);
-              }
             }
           }
         }).

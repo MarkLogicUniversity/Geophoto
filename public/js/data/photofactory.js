@@ -10,7 +10,6 @@
       return {
         showAllPhotos: showAllPhotos,
         showOnePhoto: showOnePhoto,
-        showImage: showImage,
         update: update,
         geoSearch: geoSearch,
         textSearch: textSearch,
@@ -27,13 +26,6 @@
       function showOnePhoto(id) {
         return $http
           .get('/api/image/' + id, {cache: true})
-          .then(complete)
-          .catch(failed);
-      }
-
-      function showImage(id) {
-        return $http
-          .get('/api/imagedata/' + id, {cache: true})
           .then(complete)
           .catch(failed);
       }

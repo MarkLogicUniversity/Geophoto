@@ -43,14 +43,6 @@ var selectOne = function selectOne(uri) {
     return db.documents.read('/image/' + uri + '.json').result();
 };
 
-/* This function is responsible for retrieving the binary data from the database.
-Once the data is retrieve it is converted to a base64 encoded string. In the frontend
-this data is then used as a data-uri to build up the image itself
-*/
-var selectImageData = function selectImageData(uri) {
-    return db.documents.read('/binary/' + uri).result();
-};
-
 /* This function updates the document. From the frontend we are allowed to set/change
 the title of an image.
 */
@@ -100,7 +92,7 @@ var search = function search(arg) {
     return db.documents.query(
       qb.where(
         qb.collection('image'),
-        qb.term(arg)
+        qb.parsedFrom(arg)
       ).slice(0,300)
     ).result();
   }
@@ -148,25 +140,29 @@ var apiindex = function(req, res) {
 
 /* wrapper function to retrieve one document information */
 var apiimage = function(req, res) {
-    var id = req.params.id;
-    selectOne(id).then(function(document) {
-      if (document.length !== 0) {
-        res.json(document);
-      }
-    }).catch(function(error) {
-      res.status(404).end();
-      console.log('Error: ', error);
-    });
+  var id = req.params.id;
+  selectOne(id).then(function(document) {
+    if (document.length !== 0) {
+      res.json(document);
+    }
+  }).catch(function(error) {
+    res.status(404).end();
+    console.log('Error: ', error);
+  });
 };
 
 /* wrapper function to retrieve image data */
 var apiimagedata = function(req, res) {
-    var id = req.params.id;
-    selectImageData(id).then(function(binaryData) {
-        res.json(new Buffer(binaryData[0].content, 'binary').toString('base64'));
-    }).catch(function(error) {
-      console.log('Error: ', error);
-    });
+  var id = req.params.id;
+  res.writeHead(200, { 'Content-type': 'image/jpeg' });
+  var data = [];
+  var buffer = [];
+  db.documents.read('/binary/' + id).stream('chunked').on('data', function(chunk) {
+    data.push(chunk);
+  }).on('end', function() {
+    buffer = Buffer.concat(data);
+    res.end(buffer);
+  });
 };
 
 /* wrapper function to update a document's title */

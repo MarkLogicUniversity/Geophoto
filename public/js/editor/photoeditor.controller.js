@@ -5,16 +5,15 @@
     .module('geophoto')
     .controller('photoEditorController', photoEditorController);
 
-    photoEditorController.$inject = ['$cacheFactory', '$routeParams', '$location', 'photofactory', 'photo', 'data'];
+    photoEditorController.$inject = ['$cacheFactory', '$routeParams', '$location', 'photofactory', 'data'];
 
-    function photoEditorController($cacheFactory, $routeParams, $location, photofactory, photo, data) {
+    function photoEditorController($cacheFactory, $routeParams, $location, photofactory, data) {
       var vm = this;
       var id = $routeParams.id;
       // cache
       var cache = $cacheFactory.get('$http');
 
       vm.image = data[0].content;
-      vm.image.binaryData = 'data:image/jpg;base64,' + photo;
       vm.image.title = data[0].content.title || data[0].content.filename;
       vm.image.description = data[0].content.description || 'No description yet.';
 
