@@ -1,4 +1,4 @@
-#Geopoto
+#Geophoto
 
 The project showcases how to store a variety of data structures in a MarkLogic (NoSQL Document Management) database. The application uses JSON documents with geospatial data, binary documents (JPEG image files) as well as RDF Triple data.
 
@@ -34,7 +34,7 @@ It is assumed that you already have the MarkLogic Server installed. If you requi
 Geophoto uses Node.js to call the [Management API](http://docs.marklogic.com/REST/management) to set up the application server and databases needed. To run this script, change directories to `ml-setup`, then run `node setup.js`. 
 
     cd ml-setup
-    node setup.js
+    node setup.js bootstrap
 
 > Note that `setup.js` assumes a default local installation, where the Management API is available at http://localhost:8002. If deploying to a remote server, or if you need to change the admin username or password, edit setup.js before running. 
 
