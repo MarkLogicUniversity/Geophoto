@@ -6,7 +6,7 @@ The project showcases how to store a variety of data structures in a MarkLogic (
 To get started first please follow these steps:
 
 * clone the repository
-* `cd geophoto`
+* `cd Geophoto`
 * `npm install && bower install`
 
 
