@@ -9,6 +9,12 @@ To get started first please follow these steps:
 * `cd Geophoto`
 * `npm install && bower install`
 
+##Important!
+Unfortunately the YQL table that has been used for the reverse geolookup has been shut down by Yahoo. This means that the code had to be refactored and it is now using Google's Geocoding API, which requires an API key. The API key has to be setup by the user who wishes to use this application.
+
+To get a key please follow the process outlined here: [https://developers.google.com/maps/documentation/geocoding/get-api-key](https://developers.google.com/maps/documentation/geocoding/get-api-key)
+
+Once a key is created please make sure to edit `import/es6/geolookup.es6` on line 16 and add the key to the variable (`var key = ""`)
 
 ##Capabilities
 ###Import script
@@ -31,12 +37,12 @@ There are a few steps that you need to do in order to get up and running with th
 ###MarkLogic Server
 It is assumed that you already have the MarkLogic Server installed. If you require help please [download MarkLogic](http://developer.marklogic.com/products) and read our [installation guide](http://docs.marklogic.com/guide/installation/procedures#id_28962).
 
-Geophoto uses Node.js to call the [Management API](http://docs.marklogic.com/REST/management) to set up the application server and databases needed. To run this script, change directories to `ml-setup`, then run `node setup.js`. 
+Geophoto uses Node.js to call the [Management API](http://docs.marklogic.com/REST/management) to set up the application server and databases needed. To run this script, change directories to `ml-setup`, then run `node setup.js`.
 
     cd ml-setup
     node setup.js bootstrap
 
-> Note that `setup.js` assumes a default local installation, where the Management API is available at http://localhost:8002. If deploying to a remote server, or if you need to change the admin username or password, edit setup.js before running. 
+> Note that `setup.js` assumes a default local installation, where the Management API is available at http://localhost:8002. If deploying to a remote server, or if you need to change the admin username or password, edit setup.js before running.
 
 ##Data import
 The import script can be found under the folder named 'import' and it's called `import.js`.
@@ -71,7 +77,7 @@ To import all files in the 'offline' mode:
 ###Modifications to the import script
 If you'd like to modify the import script there are a few steps that you need to do. First of all please make sure that you have the Babel compiler installed and that it is globally available on your system. You can do this by executing the following statement: `npm install -g babel`
 
-The source for the import script is under 'import/es6'. Once you have made your changes, you need to recompile the JavaScript files from the es6 source. You can do this on a Linux/Mac system by executing the following command: 
+The source for the import script is under 'import/es6'. Once you have made your changes, you need to recompile the JavaScript files from the es6 source. You can do this on a Linux/Mac system by executing the following command:
 `chmod a+x run.sh; ./run.sh`.
 
 If you're running on windows you'd have to manually recompile the JavaScript files using this command (one command per each file): `babel semantic.es6 --out-file ../semantic.js`
@@ -85,7 +91,7 @@ Before starting the application please make sure that you have the right connect
 	    user: 'admin',
 	    password: 'admin'
 	};
-	
+
 (note that this file is **different** from the connection file that the import script is using)
 
 To start the application nagivate to the project's root folder and execute the following command: `node app.js` - this should start up an Express server on port 4000 which means that navigating to localhost:4000 would show the main page of the application.

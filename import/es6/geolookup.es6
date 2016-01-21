@@ -3,29 +3,53 @@
 Model to do a reverse geolookup using the yahoo api
 */
 
-var http = require('http');
+var https = require('https');
 require('es6-promise').polyfill();
 
 export var makeRequest = location => {
   var promise = new Promise((resolve, reject) => {
-    var result = {};
+    var result = '';
+    var city = '';
+    var country = '';
+    var returnData = {};
     if (typeof location === 'object') {
+      var key = '';
       var options = {
-        hostname: 'query.yahooapis.com',
-        path: '/v1/public/yql?q=select%20*%20from%20geo.placefinder%20where%20text%3D%22' + location.latitude + '%2C' + location.longitude + '%22%20and%20gflags%3D%22R%22&format=json',
+        hostname: 'maps.googleapis.com',
+        path: '/maps/api/geocode/json?latlng=' + location.latitude + ',' + location.longitude + '&key=' + key,
         method: 'GET'
       };
-      var request = http.request(options, response => {
+      var request = https.request(options, (response) => {
         response.setEncoding('utf8');
-        response.on('data', chunk => {
-          var data = JSON.parse(chunk);
-          result = {
-            city: data.query.results.Result.city,
-            country: data.query.results.Result.country,
+        response.on('data', (chunk) => {
+          result += chunk;
+        });
+
+        response.on('end', () => {
+          var data = JSON.parse(result);
+          data.results[0].address_components
+          .filter((components) => {
+            return components.types.indexOf('locality') > -1;
+          })
+          .map((locality) => {
+            city = locality.long_name;
+          });
+
+          data.results[0].address_components
+          .filter((components) => {
+            return components.types.indexOf('country') > -1;
+          })
+          .map((countryComponent) => {
+            country = countryComponent.long_name;
+          });
+
+          returnData = {
+            city: city,
+            country: country,
             latitude: location.latitude,
             longitude: location.longitude
-          };
-          resolve(result);
+          }
+          resolve(returnData);
         });
 
       });

@@ -1,24 +1,22 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
+'use strict';
+Object.defineProperty(exports, '__esModule', {
   value: true
 });
-"use strict";
 /*
 Module to convert EXIF GPS data to decimal numbers
 */
 
-require("es6-promise").polyfill();
+require('es6-promise').polyfill();
 
-var convertGPSData = function (location) {
+var convertGPSData = function convertGPSData(location) {
   var promise = new Promise(function (resolve, reject) {
-    if (typeof location === "object") {
+    if (typeof location === 'object') {
 
-      if (location.GPSLatitudeRef === "S") {
+      if (location.GPSLatitudeRef === 'S') {
         location.GPSLatitude[0] = -location.GPSLatitude[0];
       }
 
-      if (location.GPSLongitudeRef === "W") {
+      if (location.GPSLongitudeRef === 'W') {
         location.GPSLongitude[0] = -location.GPSLongitude[0];
       }
 
@@ -39,7 +37,7 @@ var convertGPSData = function (location) {
 
       resolve(decimalLocation); //notice promise resolve
     } else {
-      reject("Error: parameter is not of type location but ", typeof location);
+      reject('Error: parameter is not of type location but ', typeof location);
     }
   });
   return promise;

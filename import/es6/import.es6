@@ -93,6 +93,8 @@ processImport(param)
               console.log(error);
             });
           } else if (!offline && offline !== 'offline') { // if the 'offline' parameter was not passed in
+          console.log(file);
+          //console.log('processing file ', location)
             geolookup.makeRequest(location)
             .then(result => {
               var uri = file.split('/').pop().replace(/[&\/\\#,+()$~%'":*?<>{} ]/g, '');

@@ -1,24 +1,22 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
+'use strict';
+Object.defineProperty(exports, '__esModule', {
   value: true
 });
-"use strict";
 /*
 Module to extract GPS data and Model/Make/date information
 */
 
-require("es6-promise").polyfill();
-var ExifImage = require("exif-makernote-fix").ExifImage;
+require('es6-promise').polyfill();
+var ExifImage = require('exif-makernote-fix').ExifImage;
 
-var getGPSInformation = function (file) {
+var getGPSInformation = function getGPSInformation(file) {
   var promise = new Promise(function (resolve, reject) {
     new ExifImage({ image: file }, function (error, exifData) {
       if (error) {
         reject(console.log(error));
       } else {
         if (Object.getOwnPropertyNames(exifData.gps).length === 0) {
-          reject(new Error("No GPS information for image: " + file));
+          reject(new Error('No GPS information for image: ' + file));
         } else {
           resolve(exifData.gps);
         }
@@ -29,7 +27,7 @@ var getGPSInformation = function (file) {
 };
 
 exports.getGPSInformation = getGPSInformation;
-var getModelInformation = function (file) {
+var getModelInformation = function getModelInformation(file) {
   var promise = new Promise(function (resolve, reject) {
     new ExifImage({ image: file }, function (error, exifData) {
       if (error) {
