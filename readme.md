@@ -14,7 +14,7 @@ Unfortunately the YQL table that has been used for the reverse geolookup has bee
 
 To get a key please follow the process outlined here: [https://developers.google.com/maps/documentation/geocoding/get-api-key](https://developers.google.com/maps/documentation/geocoding/get-api-key)
 
-Once a key is created please make sure to edit `import/es6/geolookup.es6` on line 16 and add the key to the variable (`var key = ""`)
+Once a key is created please make sure to edit `import/es6/geolookup.es6` on line 16 and add the key to the variable (`var key = ""`) and also make sure to compile the ES6 code down to ES5 by executing `./run.sh` under `import/es6/`.
 
 ##Capabilities
 ###Import script
