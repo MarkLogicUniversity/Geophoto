@@ -13,7 +13,7 @@ export var makeRequest = location => {
     var country = '';
     var returnData = {};
     if (typeof location === 'object') {
-      var key = 'AIzaSyD18a0JHPGgsGYN8CLjyZbdmpapr5jTVrA';
+      var key = '';
       var options = {
         hostname: 'maps.googleapis.com',
         path: '/maps/api/geocode/json?latlng=' + location.latitude + ',' + location.longitude + '&key=' + key,
