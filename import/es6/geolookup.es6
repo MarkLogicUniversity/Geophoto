@@ -52,7 +52,7 @@ export var makeRequest = location => {
               }
               resolve(returnData);
           } else {
-            if (status === 'OVER_QUERY_LIMIT') {
+            if (data.status === 'OVER_QUERY_LIMIT') {
               console.log('slowing down by 2 seconds')
               resolve('OVER_QUERY_LIMIT');
             }
