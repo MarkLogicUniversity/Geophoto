@@ -30,25 +30,32 @@ var makeRequest = function makeRequest(location) {
 
         response.on('end', function () {
           var data = JSON.parse(result);
-          data.results[0].address_components.filter(function (components) {
-            return components.types.indexOf('locality') > -1;
-          }).map(function (locality) {
-            city = locality.long_name;
-          });
+          if (data.status === 'OK') {
+            data.results[0].address_components.filter(function (components) {
+              return components.types.indexOf('locality') > -1;
+            }).map(function (locality) {
+              city = locality.long_name;
+            });
 
-          data.results[0].address_components.filter(function (components) {
-            return components.types.indexOf('country') > -1;
-          }).map(function (countryComponent) {
-            country = countryComponent.long_name;
-          });
+            data.results[0].address_components.filter(function (components) {
+              return components.types.indexOf('country') > -1;
+            }).map(function (countryComponent) {
+              country = countryComponent.long_name;
+            });
 
-          returnData = {
-            city: city,
-            country: country,
-            latitude: location.latitude,
-            longitude: location.longitude
-          };
-          resolve(returnData);
+            returnData = {
+              city: city,
+              country: country,
+              latitude: location.latitude,
+              longitude: location.longitude
+            };
+            resolve(returnData);
+          } else {
+            if (status === 'OVER_QUERY_LIMIT') {
+              console.log('slowing down by 2 seconds');
+              resolve('OVER_QUERY_LIMIT');
+            }
+          }
         });
       });
 

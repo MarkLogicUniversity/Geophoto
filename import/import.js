@@ -109,6 +109,7 @@ processImport(param).then(function (files) {
             console.log(file);
             //console.log('processing file ', location)
             geolookup.makeRequest(location).then(function (result) {
+              console.log(result);
               var uri = file.split('/').pop().replace(/[&\/\\#,+()$~%'":*?<>{} ]/g, '');
               objectToInsert.originalFilename = file;
               objectToInsert.filename = uri;
