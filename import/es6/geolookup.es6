@@ -13,7 +13,7 @@ export var makeRequest = location => {
     var country = '';
     var returnData = {};
     if (typeof location === 'object') {
-      var key = '';
+      var key = 'AIzaSyD18a0JHPGgsGYN8CLjyZbdmpapr5jTVrA';
       var options = {
         hostname: 'maps.googleapis.com',
         path: '/maps/api/geocode/json?latlng=' + location.latitude + ',' + location.longitude + '&key=' + key,
@@ -51,12 +51,7 @@ export var makeRequest = location => {
                 longitude: location.longitude
               }
               resolve(returnData);
-          } else {
-            if (data.status === 'OVER_QUERY_LIMIT') {
-              console.log('slowing down by 2 seconds')
-              resolve('OVER_QUERY_LIMIT');
             }
-          }
         });
 
       });

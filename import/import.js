@@ -68,49 +68,23 @@ processImport(param).then(function (files) {
   var counterValid = 0; //counter for the number of inserted json docs
   var counter = 0; //counter for the currently inserted json docs
   files.forEach(function (file) {
-    extract.getGPSInformation(file) //extract GPS information for the files
-    .then(function (GPSData) {
-      counterValid++; //only insert files that have GPS Data
-      extract.getModelInformation(file) //extract model and make info
-      .then(function (ModelData) {
-        converter.convertGPSData(GPSData) //convert GPS data
-        .then(function (location) {
-          if (offline && offline === 'offline') {
-            /*
-            the URI for the documents has to be modified as some filename may
-            contain invalid characters
-            */
-            var uri = file.split('/').pop().replace(/[&\/\\#,+()$~%'":*?<>{} ]/g, '');
-            /*
-            building up the data object that will be inserted to the database
-            */
-            objectToInsert.originalFilename = file;
-            objectToInsert.filename = uri;
-            objectToInsert.binary = '/binary/' + uri;
-            objectToInsert.make = ModelData.make;
-            objectToInsert.model = ModelData.model;
-            objectToInsert.created = ModelData.created;
-            objectToInsert.location = {
-              type: 'Point',
-              coordinates: [location.latitude, location.longitude]
-            };
-            database.insert('JSON', '', objectToInsert).then(function (response) {
-              console.log('JSON file inserted ', response.documents[0].uri);
-            })['catch'](function (error) {
-              console.log(error);
-            });
-            database.insert('JPEG', file, objectToInsert).then(function (response) {
-              console.log('JPEG file inserted ', response.documents[0].uri);
-            })['catch'](function (error) {
-              console.log(error);
-            });
-          } else if (!offline && offline !== 'offline') {
-            // if the 'offline' parameter was not passed in
-            console.log(file);
-            //console.log('processing file ', location)
-            geolookup.makeRequest(location).then(function (result) {
-              console.log(result);
+    setTimeout(function () {
+      extract.getGPSInformation(file) //extract GPS information for the files
+      .then(function (GPSData) {
+        counterValid++; //only insert files that have GPS Data
+        extract.getModelInformation(file) //extract model and make info
+        .then(function (ModelData) {
+          converter.convertGPSData(GPSData) //convert GPS data
+          .then(function (location) {
+            if (offline && offline === 'offline') {
+              /*
+              the URI for the documents has to be modified as some filename may
+              contain invalid characters
+              */
               var uri = file.split('/').pop().replace(/[&\/\\#,+()$~%'":*?<>{} ]/g, '');
+              /*
+              building up the data object that will be inserted to the database
+              */
               objectToInsert.originalFilename = file;
               objectToInsert.filename = uri;
               objectToInsert.binary = '/binary/' + uri;
@@ -121,19 +95,8 @@ processImport(param).then(function (files) {
                 type: 'Point',
                 coordinates: [location.latitude, location.longitude]
               };
-              objectToInsert.location.city = result.city;
-              objectToInsert.location.country = result.country;
               database.insert('JSON', '', objectToInsert).then(function (response) {
                 console.log('JSON file inserted ', response.documents[0].uri);
-                counter++; //increase counter for the inserted document count
-                /*
-                if the inserted document counter is equal to the max documents
-                prepared for insert call the semantic function and insert some
-                RDF data
-                */
-                if (counter === counterValid) {
-                  semantic.semantic();
-                }
               })['catch'](function (error) {
                 console.log(error);
               });
@@ -142,20 +105,58 @@ processImport(param).then(function (files) {
               })['catch'](function (error) {
                 console.log(error);
               });
-            })['catch'](function (error) {
-              console.log(error);
-            });
-          }
+            } else if (!offline && offline !== 'offline') {
+              // if the 'offline' parameter was not passed in
+              console.log(file);
+              //console.log('processing file ', location)
+              geolookup.makeRequest(location).then(function (result) {
+                var uri = file.split('/').pop().replace(/[&\/\\#,+()$~%'":*?<>{} ]/g, '');
+                objectToInsert.originalFilename = file;
+                objectToInsert.filename = uri;
+                objectToInsert.binary = '/binary/' + uri;
+                objectToInsert.make = ModelData.make;
+                objectToInsert.model = ModelData.model;
+                objectToInsert.created = ModelData.created;
+                objectToInsert.location = {
+                  type: 'Point',
+                  coordinates: [location.latitude, location.longitude]
+                };
+                objectToInsert.location.city = result.city;
+                objectToInsert.location.country = result.country;
+                database.insert('JSON', '', objectToInsert).then(function (response) {
+                  console.log('JSON file inserted ', response.documents[0].uri);
+                  counter++; //increase counter for the inserted document count
+                  /*
+                  if the inserted document counter is equal to the max documents
+                  prepared for insert call the semantic function and insert some
+                  RDF data
+                  */
+                  if (counter === counterValid) {
+                    semantic.semantic();
+                  }
+                })['catch'](function (error) {
+                  console.log(error);
+                });
+                database.insert('JPEG', file, objectToInsert).then(function (response) {
+                  console.log('JPEG file inserted ', response.documents[0].uri);
+                })['catch'](function (error) {
+                  console.log(error);
+                });
+              })['catch'](function (error) {
+                console.log(error);
+              });
+            }
+          })['catch'](function (error) {
+            console.log('Error with convertGPSData ' + error);
+          });
         })['catch'](function (error) {
-          console.log('Error with convertGPSData ' + error);
+          console.log('Error with getModelInformation ' + error);
         });
       })['catch'](function (error) {
-        console.log('Error with getModelInformation ' + error);
+        console.log('Error with getGPSInformation ' + error);
       });
-    })['catch'](function (error) {
-      console.log('Error with getGPSInformation ' + error);
     });
-  });
+  }, 2000);
 })['catch'](function (error) {
   console.log('Error with processImport ' + error);
 });
