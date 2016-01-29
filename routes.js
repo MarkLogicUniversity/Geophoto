@@ -158,6 +158,7 @@ var apiimagedata = function(req, res) {
   res.writeHead(200, { 'Content-type': 'image/jpeg' });
   var data = [];
   var buffer = [];
+  console.log(id);
   db.documents.read('/binary/' + id).stream('chunked').on('data', function(chunk) {
     data.push(chunk);
   }).on('end', function() {
