@@ -142,7 +142,9 @@ var _importer = (file) => {
 };
 
 _processImport(param).then((files) => {
-  files.forEach((file) => {
-    _importer(file);
+  files.forEach((file, index) => {
+    setTimeout(() => {
+      _importer(file);
+    }, 5000 + (index * 1000));
   });
 });
