@@ -56,24 +56,27 @@ var _processImport = (param) => {
   return promise;
 };
 
+_moduleExists().then((exists) => {
+  if (!exists) {
+    db.config.extlibs.write({
+      path: '/ext/countrysemantics.sjs',
+      contentType: 'application/vnd.marklogic-javascript',
+      source: fs.createReadStream('countrysemantics.sjs')
+    }).result().then((response) => {
+      console.log('Installed module: ' + response.path);
+    }).catch((error) => {
+      console.log('Error installing module ' + error);
+    });
+  } else {
+    console.log('Not installing /ext/countrysemantics.sjs');
+  }
+});
+
 var _importer = (file) => {
   var file = file;
   var uri = file.split('/').pop().replace(/[&\/\\#,+()$~%'":*?<>{} ]/g, '');
-  _moduleExists().then((exists) => {
-    if (!exists) {
-      db.config.extlibs.write({
-        path: '/ext/countrysemantics.sjs',
-        contentType: 'application/vnd.marklogic-javascript',
-        source: fs.createReadStream('countrysemantics.sjs')
-      }).result().then((response) => {
-        console.log('Installed module: ' + response.path);
-      }).catch((error) => {
-        console.log('Error installing module ' + error);
-      });
-    }
-    var metadataExtractor = new metadataExtract(file);
-    return metadataExtractor.getData();
-  })
+  var metadataExtractor = new metadataExtract(file);
+  return metadataExtractor.getData()
   .then((response) => {
     var uri = file.split('/').pop().replace(/[&\/\\#,+()$~%'":*?<>{} ]/g, '');
     var data = response;
