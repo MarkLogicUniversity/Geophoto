@@ -7,7 +7,7 @@ var marklogic = require('marklogic');
 var path = require('path');
 var connection = {
   host: 'localhost',
-  port: 5003,
+  port: 8010,
   user: 'admin',
   password: 'admin'
 };

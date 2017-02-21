@@ -59,7 +59,7 @@ Before executing the script please make sure that you open the file `connection.
 
 	var connection = {
 	  host: "localhost",
-	  port: 5003,
+	  port: 8010,
 	  user: "admin",
 	  password: "admin"
 	};
@@ -75,7 +75,7 @@ Before starting the application please make sure that you have the right connect
 
 	var connection = {
 	    host: 'localhost',
-	    port: 5003,
+	    port: 8010,
 	    user: 'admin',
 	    password: 'admin'
 	};

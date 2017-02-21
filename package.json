@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "main": "app.js",
   "scripts": {
+    "setup": "node ml-setup/setup.js bootstrap",
+    "import": "cd import; node import.js ../data/photos; cd ..",
+    "wipe": "node ml-setup/setup.js wipe",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "node ./node_modules/bower/bin/bower install"
   },
