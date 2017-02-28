@@ -1,3 +1,5 @@
+/* jshint node:true, esversion: 6 */
+
 'use strict';
 
 var metadataExtract = require('./metadata-extract');
@@ -15,9 +17,9 @@ var db = marklogic.createDatabaseClient(connection);
 
 var param = process.argv[2]; //path
 
-var _moduleExists = function _moduleExists() {
+var _moduleExists = function _moduleExists(modulePath) {
   var promise = new Promise(function(resolve, reject) {
-    db.config.extlibs.read('/ext/countrysemantics.sjs').result().
+    db.config.extlibs.read(modulePath).result().
     then(function (response) {
       resolve(true);
     }, function (error) {
@@ -55,22 +57,6 @@ var _processImport = (param) => {
   });
   return promise;
 };
-
-_moduleExists().then((exists) => {
-  if (!exists) {
-    db.config.extlibs.write({
-      path: '/ext/countrysemantics.sjs',
-      contentType: 'application/vnd.marklogic-javascript',
-      source: fs.createReadStream('countrysemantics.sjs')
-    }).result().then((response) => {
-      console.log('Installed module: ' + response.path);
-    }).catch((error) => {
-      console.log('Error installing module ' + error);
-    });
-  } else {
-    console.log('Not installing /ext/countrysemantics.sjs');
-  }
-});
 
 var _importer = (file) => {
   var file = file;
@@ -114,13 +100,13 @@ var _importer = (file) => {
     })
     .then((response) => {
       if (response.message) {
-        console.log(response.message)
+        console.log(response.message);
       } else {
         console.log('Triple for ' + country + ' inserted with URI: ' + response[0].value);
       }
     })
     .catch((error) => {
-      console.log(error)
+      console.log(error);
     });
   })
   .then(() => {
@@ -137,9 +123,25 @@ var _importer = (file) => {
     console.log('Inserted image with URI ' + response.documents[0].uri);
   })
   .catch((error) => {
-    console.log(error)
+    console.log(error);
   });
 };
+
+_moduleExists('/ext/countrysemantics.sjs').then((exists) => {
+  if (!exists) {
+    db.config.extlibs.write({
+      path: '/ext/countrysemantics.sjs',
+      contentType: 'application/vnd.marklogic-javascript',
+      source: fs.createReadStream('countrysemantics.sjs')
+    }).result().then((response) => {
+      console.log('Installed module: ' + response.path);
+    }).catch((error) => {
+      console.log('Error installing module ' + error);
+    });
+  } else {
+    console.log('Not installing /ext/countrysemantics.sjs');
+  }
+});
 
 _processImport(param).then((files) => {
   files.forEach((file, index) => {
