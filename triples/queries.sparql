@@ -1,0 +1,63 @@
+# The queries in this file can be used to obtain the queries we want from
+# http://dbpedia.org/sparql. Paste them into QC and run, getting output as
+# Turtle. Combine the results into all-countries.ttl.
+
+
+# Use this for Asia, North America, South America, Oceania.
+PREFIX prop: <http://dbpedia.org/property/>
+
+construct {
+  ?country prop:continent dbc:Countries_in_Oceania .
+  dbc:Countries_in_Oceania skos:prefLabel ?continentLabel
+}
+where {
+  ?category skos:broader dbc:Countries_in_Oceania .
+  ?country dct:subject ?category ;
+    a <http://schema.org/Country> .
+  dbc:Countries_in_Oceania skos:prefLabel ?continentLabel
+  FILTER NOT EXISTS { ?country prop:yearEnd ?yearEnd }
+}
+
+
+
+# gets prop:continent Africa, Europe, Oceania (but not Australia), two countries in Asia
+PREFIX db: <http://dbpedia.org/resource/>
+PREFIX onto: <http://dbpedia.org/ontology/>
+PREFIX prop: <http://dbpedia.org/property/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+CONSTRUCT {
+  ?country onto:capital ?capital .
+  ?country prop:continent ?continent .
+  ?country rdfs:label ?countryLabel .
+  ?country prop:areaKm ?areaKm .
+  ?country prop:currencyCode ?currencyCode .
+  ?country prop:imageFlag ?imageFlag .
+  ?country prop:imageMap ?imageMap .
+  ?country prop:timeZone ?timeZone .
+  ?country onto:abstract ?abstract .
+  ?country onto:anthem ?anthem .
+  ?country foaf:homepage ?homepage .
+  ?continent skos:prefLabel ?continentLabel .
+}
+WHERE {
+  ?country a <http://schema.org/Country> ;
+    onto:capital ?capital ;
+    prop:imageFlag ?imageFlag ;
+    onto:abstract ?abstract .
+  OPTIONAL { ?country prop:areaKm ?areaKm. }
+  OPTIONAL { ?country prop:currencyCode ?currencyCode. }
+  OPTIONAL { ?country prop:imageMap ?imageMap. }
+  OPTIONAL { ?country prop:timeZone ?timeZone. }
+  OPTIONAL { ?country onto:anthem ?anthem. }
+  OPTIONAL { ?country foaf:homepage ?homepage. }
+  OPTIONAL { ?country rdfs:label ?countryLabel. }
+  OPTIONAL {
+    ?continent skos:broader dbc:Countries_by_continent ;
+      skos:prefLabel ?continentLabel .
+    ?country dct:subject ?continent .
+  }
+  FILTER (langMatches(lang(?abstract), "EN"))
+  FILTER (langMatches(lang(?countryLabel), "EN"))
+  FILTER NOT EXISTS { ?country prop:yearEnd ?yearEnd }
+}

@@ -1,3 +1,5 @@
+/* jshint node:true, esversion: 6 */
+
 'use strict';
 
 var metadataExtract = require('./metadata-extract');
@@ -12,12 +14,13 @@ var connection = {
   password: 'admin'
 };
 var db = marklogic.createDatabaseClient(connection);
+var pb = marklogic.patchBuilder;
 
 var param = process.argv[2]; //path
 
-var _moduleExists = function _moduleExists() {
+var _docExists = function _docExists(docPath) {
   var promise = new Promise(function(resolve, reject) {
-    db.config.extlibs.read('/ext/countrysemantics.sjs').result().
+    db.documents.probe(docPath).result().
     then(function (response) {
       resolve(true);
     }, function (error) {
@@ -56,35 +59,23 @@ var _processImport = (param) => {
   return promise;
 };
 
-_moduleExists().then((exists) => {
-  if (!exists) {
-    db.config.extlibs.write({
-      path: '/ext/countrysemantics.sjs',
-      contentType: 'application/vnd.marklogic-javascript',
-      source: fs.createReadStream('countrysemantics.sjs')
-    }).result().then((response) => {
-      console.log('Installed module: ' + response.path);
-    }).catch((error) => {
-      console.log('Error installing module ' + error);
-    });
-  } else {
-    console.log('Not installing /ext/countrysemantics.sjs');
-  }
-});
-
 var _importer = (file) => {
-  var file = file;
   var uri = file.split('/').pop().replace(/[&\/\\#,+()$~%'":*?<>{} ]/g, '');
   var metadataExtractor = new metadataExtract(file);
+  var jsonURI = null;
+  var country = null;
   return metadataExtractor.getData()
   .then((response) => {
+    // Write the JSON doc to the database
     var uri = file.split('/').pop().replace(/[&\/\\#,+()$~%'":*?<>{} ]/g, '');
     var data = response;
     data.originalFilename = file;
     data.filename = uri;
     data.binary = '/binary/' + uri;
+    jsonURI = '/image/' + uri + '.json';
+    country = data.location.country;
     return db.documents.write({
-      uri: '/image/' + uri + '.json',
+      uri: jsonURI,
       contentType: 'application/json',
       collections: ['image'],
       content: data
@@ -92,38 +83,42 @@ var _importer = (file) => {
   })
   .then((response) => {
     console.log('Inserted document with URI ' + response.documents[0].uri);
-    return db.documents.read(response.documents[0].uri).result();
+
+    // Find the IRI for this picture's country
+    return db.graphs.sparql({
+      contentType: 'application/sparql-results+json',
+      query:
+        `PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+         select ?countryIRI
+         where {
+           ?countryIRI rdfs:label "United States"@en .
+         }`
+    }).result();
   })
   .then((response) => {
-    var country = response[0].content.location.country.replace(' ', '_');
-    var sparqlQuery = [
-      'PREFIX db: <http://dbpedia.org/resource/>',
-      'PREFIX onto: <http://dbpedia.org/ontology/>',
-      'ASK { db:' + country + ' ?p ?o }'
-    ];
-    db.graphs.sparql('application/sparql-results+json', sparqlQuery.join('\n')).result()
-    .then((SPARQLresponse) => {
-      if (!SPARQLresponse.boolean) {
-        return db.invoke({
-          path: '/ext/countrysemantics.sjs',
-          variables: { country: country }
-        }).result();
-      } else {
-        return { message: 'No semantic data inserted for ' + country };
-      }
-    })
-    .then((response) => {
-      if (response.message) {
-        console.log(response.message)
-      } else {
-        console.log('Triple for ' + country + ' inserted with URI: ' + response[0].value);
-      }
-    })
-    .catch((error) => {
-      console.log(error)
-    });
+    var countryIRI = response.results.bindings[0].countryIRI.value;
+
+    return db.documents.patch(
+      jsonURI,
+      pb.insert(
+        '/binary',
+        'after',
+        {
+          "triples": [
+            {
+              "triple": {
+                "subject": jsonURI,
+                "predicate": 'takenIn',
+                "object": countryIRI
+              }
+            }
+          ]
+        }
+      )
+    ).result();
   })
   .then(() => {
+    // Write the binary doc to the database
     var ws = db.documents.createWriteStream({
       uri: '/binary/' + uri,
       contentType: 'image/jpeg',
@@ -137,9 +132,26 @@ var _importer = (file) => {
     console.log('Inserted image with URI ' + response.documents[0].uri);
   })
   .catch((error) => {
-    console.log(error)
+    console.log(error);
   });
 };
+
+// if the country triples haven't been loaded yet, load them.
+_docExists('http://marklogic.com/semantics/countries').then((exists) => {
+  if (!exists) {
+    db.graphs.write({
+      uri: 'http://marklogic.com/semantics/countries',
+      contentType: 'text/turtle',
+      data: fs.createReadStream('../triples/all-countries.ttl')
+    }).result().then((response) => {
+      console.log('Loaded country triples: ' + JSON.stringify(response));
+    }).catch((error) => {
+      console.log('Error loading country triples: ' + error);
+    });
+  } else {
+    console.log('Country triples already loaded');
+  }
+});
 
 _processImport(param).then((files) => {
   files.forEach((file, index) => {
