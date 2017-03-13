@@ -22,7 +22,7 @@ var _docExists = function _docExists(docPath) {
   var promise = new Promise(function(resolve, reject) {
     db.documents.probe(docPath).result().
     then(function (response) {
-      resolve(true);
+      resolve(response.exists);
     }, function (error) {
       resolve(false);
     });
@@ -91,8 +91,11 @@ var _importer = (file) => {
         `PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
          select ?countryIRI
          where {
-           ?countryIRI rdfs:label "United States"@en .
-         }`
+           ?countryIRI rdfs:label ?countryLabel .
+         }`,
+      bindings: {
+        countryLabel: { value: country, lang: 'en'}
+      }
     }).result();
   })
   .then((response) => {
