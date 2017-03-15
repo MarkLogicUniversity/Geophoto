@@ -1,7 +1,7 @@
 // get triples about the country from DBPedia and insert them into MarkLogic.
 declareUpdate();
 
-var sem = require('/MarkLogic/semantics.xqy');
+var sem = require('/MarkLogic/semantics');
 
 var prefixes = 'PREFIX db: <http://dbpedia.org/resource/> PREFIX onto: <http://dbpedia.org/ontology/> PREFIX prop: <http://dbpedia.org/property/> PREFIX foaf: <http://xmlns.com/foaf/0.1/> ';
 
@@ -37,8 +37,8 @@ var endpoint = 'http://dbpedia.org/sparql?query=';
 var suffix = '&format=text%2Fplain';
 var qFinal = fn.concat(endpoint, sparqlQuery, suffix);
 var dbPediaResponse = xdmp.httpGet(qFinal);
-var header = dbPediaResponse.next();
-var dbPediaTriples = dbPediaResponse.next();
-var triplesForInsert = sem.rdfParse(dbPediaTriples.value, 'ntriple');
+// var header = dbPediaResponse.next();
+var dbPediaTriples = fn.subsequence(dbPediaResponse, 2);
+var triplesForInsert = sem.rdfParse(dbPediaTriples, 'ntriple');
 
 sem.rdfInsert(triplesForInsert, null, null, 'country-data');
